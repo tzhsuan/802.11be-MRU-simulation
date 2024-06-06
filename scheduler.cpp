@@ -1,6 +1,6 @@
 #include "scheduler.h"
 
-//¥Î¨Ó·í§@±Æµ{ªº±µ¤f¡A¥i¥H®Ú¾Úap¿ï¾Ü¤£¦P±Æµ{ºâªk¡A¶]sim time 
+//ç”¨ä¾†ç•¶ä½œæ’ç¨‹çš„æ¥å£ï¼Œå¯ä»¥æ ¹æ“šapé¸æ“‡ä¸åŒæ’ç¨‹ç®—æ³•ï¼Œè·‘sim time 
 using namespace std;
 
 Scheduler::Scheduler(int sim_time)
@@ -18,7 +18,7 @@ void Scheduler::generate_traffic(vector<double> SL_STR_NSTR_RATIO,vector<int> pr
 	
 	int STA_ID = 0;
 	ap->traffic_arrival_rates = traffic_arrival_rates;
-	for(int i = 0; i < pri_people_count.size(); i++)
+	for(int i = 0; i < pri_people_count.size(); i++) //ä¸åŒpriority 
 	{
 		double lamda = double(traffic_arrival_rates[i]) / (packet_sizes[i] * 8);
 		ap->station_list.push_back(vector<Station>(pri_people_count[i]));
@@ -26,7 +26,7 @@ void Scheduler::generate_traffic(vector<double> SL_STR_NSTR_RATIO,vector<int> pr
 		int STR = SL + SL_STR_NSTR_RATIO[1] * pri_people_count[i];
 		int NSTR = STR + SL_STR_NSTR_RATIO[2] * pri_people_count[i];
 		
-		for(int j = 0; j < pri_people_count[i]; j++)
+		for(int j = 0; j < pri_people_count[i]; j++) //ä¾æ“šä¸åŒpriorityæ¯”ä¾‹æ±ºå®šè£ç½®å€‹æ•¸ 
 		{
 			string device_type = ""; 
 			if(j < SL) device_type = "SL";
@@ -34,25 +34,25 @@ void Scheduler::generate_traffic(vector<double> SL_STR_NSTR_RATIO,vector<int> pr
 			else device_type = "NSTR";
 			Station station = Station(device_type, STA_ID,i,sim_time,packet_sizes[i]*8);
 			//Station station;
-			unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();
-		    std::mt19937 gen(seed1);
-		    //¨C­Ómus ­n¨Ó¦h¤Ö«Ê¥]
-		    // 20Mb / (200 * 8) = 12500 ­Ó«Ê¥] / s. => 0.0125­Ó«Ê¥] / mus 
-		    std::exponential_distribution<> distrib(lamda);
+			unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();  //gets the current system time as an unsigned integer
+		    std::mt19937 gen(seed1); //random number generator class
+		    //æ¯å€‹mus è¦ä¾†å¤šå°‘å°åŒ…
+		    // 20Mb / (200 * 8) = 12500 å€‹å°åŒ… / s. => 0.0125å€‹å°åŒ… / mus 
+		    std::exponential_distribution<> distrib(lamda); //generate random numbers follow the exponential distribution with the lamda value=> represent waiting times between events
 		    double last_arrival = 0;
 		    double inter_arrival;
 		    int packetCount = 0;
-		    while (last_arrival < sim_time)
+		    while (last_arrival < sim_time)  //è¨ˆç®—å–®æ¬¡simé€±æœŸæœƒç´¯ç©å¤šå°‘å°åŒ…ç¸½æ•¸ 
 		    {
 		    	//cout<< packetCount<<endl;
-		        inter_arrival = distrib(gen);
-		        //cout<<"«Ê¥]©è¹F®É¶¡ : "<< last_arrival << endl; 
-		        station.packets.push_back(Packet(packet_sizes[i]*8, last_arrival,last_arrival+DEADLINES[i]));//packet ªº°ò¥»³æ¦ìÂà¬°bit 
+		        inter_arrival = distrib(gen);  //distrib recall exponential_distribution with lambda and gen recall mt19937 gen(seed1)
+		        //cout<<"å°åŒ…æŠµé”æ™‚é–“ : "<< last_arrival << endl; 
+		        station.packets.push_back(Packet(packet_sizes[i]*8, last_arrival,last_arrival+DEADLINES[i]));//packet çš„åŸºæœ¬å–®ä½è½‰ç‚ºbit 
 		        
 		        last_arrival += inter_arrival;
 		        packetCount+=1;
 		    }
-		    cout <<"Àu¥ı¯Å:"<< i  << ", STA ID:"<< STA_ID <<", «Ê¥]Á`¼Æ: " << packetCount << endl;
+		    cout <<"å„ªå…ˆç´š:"<< i  << ", STA ID:"<< STA_ID <<", å°åŒ…ç¸½æ•¸: " << packetCount << endl;
 		    ap->station_list[i][j] = station;
 		    STA_ID+=1;
 		}
@@ -82,10 +82,10 @@ void Scheduler::schedule_access(int method, double alpha)
 			for(int p = 0; BandwidthA > 0 && p < 4; p++)
 			{
 				BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,false,-1,p,-1);
-				//cout <<"Àu¥ı¯Å§O "<< 4-p<<"¨Ï¥Î«á³Ñ¾lÀW¼e = " <<  BandwidthA << endl;
+				//cout <<"å„ªå…ˆç´šåˆ¥ "<< 4-p<<"ä½¿ç”¨å¾Œå‰©é¤˜é »å¯¬ = " <<  BandwidthA << endl;
 			}
 			//ap->print_info();
-			//cout << "³Ñ¾lÀW¼e = " <<  BandwidthA << endl;
+			//cout << "å‰©é¤˜é »å¯¬ = " <<  BandwidthA << endl;
 
 		}
 		else if(method == 1)
@@ -94,11 +94,11 @@ void Scheduler::schedule_access(int method, double alpha)
 			ap->sortSTAs(1);
 			BandwidthA = ap->opt_RCL(BandwidthA,true,false,false);
 			BandwidthA = ap->opt_FGC(BandwidthA,true,false,false);
-			cout << "³Ñ¾lÀW¼e = " <<  BandwidthA << endl; 
+			cout << "å‰©é¤˜é »å¯¬ = " <<  BandwidthA << endl; 
 			//ap->print_info();
 		}
 		transTime = ap->find_avg_length(curTime4A);//
-		ap->transmit2STAs(curTime4A,transTime);//­n§ï32768 
+		ap->transmit2STAs(curTime4A,transTime);//è¦æ”¹32768 
 
 		
 
@@ -112,12 +112,12 @@ void Scheduler::schedule_access(int method, double alpha)
 			ap->cal_STAs_ana(duration,sim_time);
 		}
 		
-		 //©µ¿ğ¶Ç¿éªº¸Ü ¶Ç¿é®É¶¡¥i¥H©Ô°ª«Ü¦h 
-		cout << "·í«e®É¶¡ = " <<  curTime4A << endl; 
+		 //å»¶é²å‚³è¼¸çš„è©± å‚³è¼¸æ™‚é–“å¯ä»¥æ‹‰é«˜å¾ˆå¤š 
+		cout << "ç•¶å‰æ™‚é–“ = " <<  curTime4A << endl; 
 		c+=1;
 	}
 	ap->sortSTAs(0);
-	cout << "¶]°é" << c<< endl; 
+	cout << "è·‘åœˆ" << c<< endl; 
 }
 void Scheduler::schedule_access2CH(int method,double alpha)
 {
@@ -182,7 +182,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			
 			
 			//end
-			//else OPT ¨Ï¥Îupdate RD«á¡A¨â­ÓÀW¹D¦U¦Û°tMRUµ¦²¤ ­n«ä¦Ò 
+			//else OPT ä½¿ç”¨update RDå¾Œï¼Œå…©å€‹é »é“å„è‡ªé…MRUç­–ç•¥ è¦æ€è€ƒ 
 			int mlo1_trans_timeA = ap->find_avg_len4MLO1(true,curTime4A,-1,-1,0);
 			int mlo1_trans_timeB = ap->find_avg_len4MLO1(true,curTime4B,-1,-1,1);
 			
@@ -197,20 +197,20 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			bool sync_mode = false;
 			if(ebr_mlo0 >= ebr_mlo1)
 			{
-				cout << "¨Ï¥Î EOSYNC Model" << endl;
+				cout << "ä½¿ç”¨ EOSYNC Model" << endl;
 				sync_mode = true;
 				durationA+=mlo0_trans_time;
 				durationB+=mlo0_trans_time;
 			}
 			else
 			{
-				cout << "¨Ï¥Î EOASYNC Model"<<endl;
+				cout << "ä½¿ç”¨ EOASYNC Model"<<endl;
 				durationA+=mlo1_trans_timeA;
 				durationB+=mlo1_trans_timeB;
 			}
 			int tA =  durationA - 2 * SIFS - ACK;
 			int tB = durationB - 2 * SIFS - ACK;
-			// «ü¬£success trans, start idx, delay
+			// æŒ‡æ´¾success trans, start idx, delay
 			for(int p = 0; p < 4; p++)
 			{
 				for(int i = 0; i < ap->station_list[p].size(); i++)
@@ -224,12 +224,12 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 					double drB = !isnan(STA->allocDRs[m][1])? STA->allocDRs[m][1]:0.0;
 					double Tdr = drA + drB;
 					
-					//cout <<STA->STA_ID<<", Àu¥ı¯Å§O = "<< p <<", success trans number = " << STA->success_trans_nth[m] << endl;
+					//cout <<STA->STA_ID<<", å„ªå…ˆç´šåˆ¥ = "<< p <<", success trans number = " << STA->success_trans_nth[m] << endl;
 					if(Tdr != 0.0){
 						double tmpA = STA->success_trans_nth[m] * tA * drA / (tA * drA + tB * drB);
 						double tmpB = STA->success_trans_nth[m] * tB * drB / (tA * drA + tB * drB);
-						//cout << "¦bÀW¹D A ¶Ç¿éªº«Ê¥]¼Æ¶q = " << tmpA << endl;
-						//cout << "¦bÀW¹D B ¶Ç¿éªº«Ê¥]¼Æ¶q = " << tmpB << endl;
+						//cout << "åœ¨é »é“ A å‚³è¼¸çš„å°åŒ…æ•¸é‡ = " << tmpA << endl;
+						//cout << "åœ¨é »é“ B å‚³è¼¸çš„å°åŒ…æ•¸é‡ = " << tmpB << endl;
 
 						
 						STA->n_suc_packet_chA+=tmpA;
@@ -314,12 +314,12 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			
 			
 		}
-		 //©µ¿ğ¶Ç¿éªº¸Ü ¶Ç¿é®É¶¡¥i¥H©Ô°ª«Ü¦h 
-		cout << "·í«e®É¶¡ ¦bÀW¹DA = " <<  curTime4A<<", ¦bÀW¹DB = "<< curTime4B << endl; 
+		 //å»¶é²å‚³è¼¸çš„è©± å‚³è¼¸æ™‚é–“å¯ä»¥æ‹‰é«˜å¾ˆå¤š 
+		cout << "ç•¶å‰æ™‚é–“ åœ¨é »é“A = " <<  curTime4A<<", åœ¨é »é“B = "<< curTime4B << endl; 
 		c+=1;
 		flagA = curTime4A < sim_time;
 		flagB = curTime4B < sim_time;
 	}
 	ap->sortSTAs(0);
-	cout << "¶]°é" << c<< endl; 
+	cout << "è·‘åœˆ" << c<< endl; 
 }
