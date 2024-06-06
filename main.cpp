@@ -5,19 +5,20 @@
 #include "scheduler.h"
 #include <exception> 
 using namespace std;
-int D = 5;//¹êÅç®É¶¡ ³æ¦ì ¬í 
+int D = 5;
 int MILLION = 1000000;
-int T = 1;//¨C­Ó¹êÅç°µ´X¦¸ 
-const vector<double> SL_STR_NSTR_RATIO = {0.2,0.4,0.4}; //¦U¸Ë¸m¤ñ¨Ò 
-const vector<int> TRAFFIC_ARRIVAL_RATES = vector<int>{20,160,300,100};// ¦UÀu¥ı¯Å³æ­Ó¥Î¤áªº«Ê¥]¬y¶q 
-const vector<int> MPDU_LENS = vector<int>{200,1000,500,500}; // ¦UÀu¥ı¯Å«Ê¥]ªø«×³æ¦ì 
-const vector<int> DEADLINES = vector<int>{150000,200000,1000000,2000000}; // mus
-const vector<string> Method_NAME = {"Joe_1CH_","Opt_1CH_","Joe_2CH_","Opt_2CH_"};
+int T = 5;
+const vector<double> SL_STR_NSTR_RATIO = {0.2,0.4,0.4}; 
+const vector<int> PRI_PEOPLE = vector<int>{5,5,5,5};// 4*7çš„æƒ…æ³ä¸‹ é »å¯¬3600 ARR = 4060 æœƒå¾—åˆ°  3220  //æ›´å‹•ç‚º5å€‹ 
+const vector<int> TRAFFIC_ARRIVAL_RATES = vector<int>{20,160,300,100};// Mbit 20 160 300 100 => 2250  //æ›´å‹•ç‚ºäº”å€‹ 
+const vector<int> MPDU_LENS = vector<int>{200,1000,500,500}; //Byte  //æ›´å‹•ç‚ºäº”å€‹  
+const vector<int> DEADLINES = vector<int>{150000,200000,1000000,2000000}; // mus => 46.72w mus  //æ›´å‹•ç‚ºäº”å€‹  
+const vector<string> Method_NAME = {"Joe_1CH_","Opt_1CH_","Joe_2CH_","Opt_2CH_"};   
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 
-void writeData(int Method, string _fn0,string _fn,vector<vector<double>> Datas)
+void writeData(int Method,string _fn,vector<vector<double>> Datas)
 {
-	string filen = _fn0 + Method_NAME[Method];
+	string filen = "å¯¦é©—çµæœ1ch/" + Method_NAME[Method];
 	string fn = filen + _fn + ".csv";
 	ofstream outfile(fn);	
 	for(int i = 0; i < Datas.size(); i++)
@@ -31,71 +32,83 @@ void writeData(int Method, string _fn0,string _fn,vector<vector<double>> Datas)
 	outfile.close();
 }
 
-
+vector<double> get_anaErrRate(vector<vector<double>> THs,vector<vector<double>> MTHs) //åˆ†ææ•¸å­¸åˆ†æèˆ‡æ¨¡æ“¬èª¤å·® 
+{
+	double avg_Err = 0.0;
+	vector<double> avg_Errs(4,0.0);
+	int n = THs.size();
+	for(int i = 0; i < n; i++)
+	{
+		for(int j = 0; j < 4; j++)
+		{
+			avg_Errs[j]+=abs(THs[i][j]-MTHs[i][j]) / THs[i][j] / n;
+		}
+	}
+	
+	return avg_Errs;
+}
 
 
 
 int main(int argc, char** argv) {
-	int Method = 0;//¤èªk¿ï¾Ü  0:MRU SRAs, 1:OPT, 2:TMS, 3:EOASYNC + OPT 
+	int Method = 1;
 	double alpha = 2.75;
-	double sim_time = MILLION * D; //¼ÒÀÀ®É¶¡ ³æ¦ìmu s (¦Ê¸U¤À¤§¤@) 
+	double sim_time = MILLION * D;
 	
-	vector<vector<double>> STAs_TH(4);//©Ò¦³¸Ë¸mªº§]¦R¶q¬ö¿ı 
-	vector<vector<double>> STAs_D(4);//©Ò¦³¸Ë¸mªº©µ¿ğ¬ö¿ı
+	vector<vector<double>> STAs_TH(4);
+	vector<vector<double>> STAs_D(4);
 	vector<double> P_TH(4);
 	vector<double> P_D(4);
 	
 	//vector<vector<double>> alpha_TH(20,vector<double>(4,0.0));
 	//vector<vector<double>> alpha_D(20,vector<double>(4,0.0));
 	
-	vector<int> VAR_PRI_PEOPLE = vector<int>{1,1,1,1};//°_©l¦UÀu¥ı¯Å¥Î¤á¼Æ¶q 
+	vector<int> VAR_PRI_PEOPLE = vector<int>{1,1,1,1};
 	//vector<int> VAR_TRAFFIC_ARRIVAL_RATES = vector<int>{10,80,150,50};
 	
-	int initPN = 4;//°_©l¥Î¤á¼Æ¶q 
-	int finPN = 60;//³Ì²×¥Î¤á¼Æ¶q 
+	int initPN = 4;
+	int finPN = 60;
 	int initAlpha = alpha;
 	int finAlpha = alpha + 4;
-	int round4VarP = (finPN - initPN)/4 + 1;//finPN - initPN)/20 + 1 <- ¥Î©óÂùÀW¹D 
-	int round4VarAlpha = (finAlpha - initAlpha)*4 + 1;//¥Î©óÅÜ°Êalpha 
-	vector<vector<double>> VAR_STA_TH(round4VarP,vector<double>(4,0.0));//20~100¦@9­Ó §]¦R¶q 
+	int round4VarP = (finPN - initPN)/4 + 1;//finPN - initPN)/20 + 1
+	int round4VarAlpha = (finAlpha - initAlpha)*4 + 1;
+	vector<vector<double>> VAR_STA_TH(round4VarP,vector<double>(4,0.0));//20~100å…±9å€‹
 	vector<vector<double>> VAR_STA_MTH(round4VarP,vector<double>(4,0.0));//Math  
 	vector<vector<double>> VAR_STA_MD(round4VarP,vector<double>(4,0.0));//Math 
-	vector<vector<double>> VAR_STA_D(round4VarP,vector<double>(4,0.0));//©µ¿ğ 
+	vector<vector<double>> VAR_STA_D(round4VarP,vector<double>(4,0.0));
 	
-	vector<vector<double>> VAR_STA_packet_lr(round4VarP,vector<double>(4,0.0));//«Ê¥]¿ò¥¢²v 
-	vector<vector<double>> VAR_STA_chs_util(round4VarP,vector<double>(2,0.0));//ÀW¹D§Q¥Î²v 
+	vector<vector<double>> VAR_STA_packet_lr(round4VarP,vector<double>(4,0.0));
+	vector<vector<double>> VAR_STA_chs_util(round4VarP,vector<double>(2,0.0));
 	
 	
-	vector<vector<double>> DEV_TH(4,vector<double>(3,0.0)); // 4­Ópri, 3­Ó¸Ë¸mÃş«¬ 
-	vector<vector<double>> DEV_D(4,vector<double>(3,0.0)); // 4­Ópri, 3­Ó¸Ë¸mÃş«¬
+	vector<vector<double>> DEV_TH(4,vector<double>(3,0.0)); // 4å€‹pri, 3å€‹è£ç½®é¡å‹ 
+	vector<vector<double>> DEV_D(4,vector<double>(3,0.0)); // 4å€‹pri, 3å€‹è£ç½®é¡å‹
 	
 	
 		
 	
 	double total_avg_th = 0.0;
-	for(int num = 0; num < round4VarP; num++)//¹êÅç¶i¦æ¦¸¼Æ 
+	for(int num = 0; num < round4VarP; num++)
 	{
-		for(int t = 0; t < T; t++)//¨C­Ó¹êÅç­«½ÆT¦¸¨ú¥­§¡ 
+		for(int t = 0; t < T; t++)
 		{
 			cout << "alpha = " << alpha << endl;
-			Scheduler scheduler = Scheduler(sim_time);
-			scheduler.generate_traffic(SL_STR_NSTR_RATIO,VAR_PRI_PEOPLE, TRAFFIC_ARRIVAL_RATES, MPDU_LENS, DEADLINES);//¥Í¦¨«Ê¥] 
-			//¶}©l±Æµ{ 
+			Scheduler scheduler = Scheduler(sim_time); //é€²å…¥apèˆ‡å„ç¨®æ–¹æ³•æ¯”è¼ƒ 
+			scheduler.generate_traffic(SL_STR_NSTR_RATIO,VAR_PRI_PEOPLE, TRAFFIC_ARRIVAL_RATES, MPDU_LENS, DEADLINES);
+			
 			if(Method < 2) scheduler.schedule_access(Method,alpha);
-			else scheduler.schedule_access2CH(Method,alpha);
-			//±Æµ{µ²§ô		
+			else scheduler.schedule_access2CH(Method,alpha);		
 			AP* ap = scheduler.ap;		
 			
 			if(t == 0)// init
 			{
-				for(int p = 0; p < VAR_PRI_PEOPLE.size(); p++)
+				for(int p = 0; p < PRI_PEOPLE.size(); p++)
 				{
 					STAs_TH[p] = vector<double>(ap->station_list[p].size(),0.0);
 					STAs_D[p] = vector<double>(ap->station_list[p].size(),0.0);
 				}
 			} 
 			double total_th = 0.0;
-			//Å|¥N©Ò¦³¥Î¤á¡A­pºâ±Æµ{µ²§ô«áªº¸ê°T ¦p:§]¦R¶q¡B©µ¿ğµ¥ 
 			for(int p = 0; p < 4; p++)
 			{
 				double p_pl = 0.0; // packet loss rate
@@ -110,7 +123,7 @@ int main(int argc, char** argv) {
 				for(int i = 0; i < ap->station_list[p].size(); i++)
 				{
 					Station* STA = &ap->station_list[p][i];
-					double STA_dealy = STA->total_dealy_time / (STA->success_trans * 1000); //±qmus to ms 
+					double STA_dealy = STA->total_dealy_time / (STA->success_trans * 1000); //å¾mus to ms 
 					double STA_TH = double(STA->success_trans)*8*MPDU_LENS[p] / sim_time;
 					double STA_ana_D = STA->ana_SD / STA->ana_SN;
 					p_pl+= (double)STA->n_expired_packet / STA->packets.size() ; 
@@ -131,10 +144,10 @@ int main(int argc, char** argv) {
 
 					
 					
-					cout << "STA ID:"<< STA->STA_ID <<", «Ê¥]Á`¼Æ = " << STA->packets.size() << ", success transmission = " << STA->success_trans<<", §]¦R¶q = "<< STA_TH  <<", ©µ¿ğ = "<< STA_dealy  << endl;
-					cout << "«Ê¥]¿ò¥¢²v = " << (double)STA->n_expired_packet / STA->packets.size() << ", ¦bAÀW¹D¶Ç¿é¼Æ¶q = " << STA->n_suc_packet_chA <<", ¦bBÀW¹D¶Ç¿é¼Æ¶q = "<< STA->n_suc_packet_chB  << endl;
+					cout << "STA ID:"<< STA->STA_ID <<", å°åŒ…ç¸½æ•¸ = " << STA->packets.size() << ", success transmission = " << STA->success_trans<<", ååé‡ = "<< STA_TH  <<", å»¶é² = "<< STA_dealy  << endl;
+					cout << "å°åŒ…éºå¤±ç‡ = " << (double)STA->n_expired_packet / STA->packets.size() << ", åœ¨Aé »é“å‚³è¼¸æ•¸é‡ = " << STA->n_suc_packet_chA <<", åœ¨Bé »é“å‚³è¼¸æ•¸é‡ = "<< STA->n_suc_packet_chB  << endl;
 					cout << "Device type = " << STA->device << endl;
-					if(Method == 0) cout << "¼Æ¾Ç¤ÀªR, §]¦R¶q = " << STA->ana_TH << ", ¥­§¡©µ¿ğ = " << STA_ana_D  <<", success transmission = " <<STA->ana_SN<<endl;
+					if(Method == 0) cout << "æ•¸å­¸åˆ†æ, ååé‡ = " << STA->ana_TH << ", å¹³å‡å»¶é² = " << STA_ana_D  <<", success transmission = " <<STA->ana_SN<<endl;
 					if(Method > 1)
 					{
 						int dt = -1;
@@ -168,26 +181,27 @@ int main(int argc, char** argv) {
 				VAR_STA_D[num][p]+=p_dealy / T;
 				VAR_STA_MD[num][p]+=p_math_delay / T;
 							
-				cout <<"Àu¥ı¯Å§O = "<< 4-p <<", Á`§]¦R¶q/Mbits = "<<p_throughput << endl;
-				cout <<"Àu¥ı¯Å§O = "<< 4-p << ", ¥­§¡¥Î¤á©µ¿ğ/ms = " << p_dealy << endl;
+				cout <<"å„ªå…ˆç´šåˆ¥ = "<< 4-p <<", ç¸½ååé‡/Mbits = "<<p_throughput << endl;
+				cout <<"å„ªå…ˆç´šåˆ¥ = "<< 4-p << ", å¹³å‡ç”¨æˆ¶å»¶é²/ms = " << p_dealy << endl;
 				total_avg_th+=p_throughput/T;
 				total_th+=p_throughput;
 			}
 			
-			cout << "·í«e¦^¦X Á`§]¦R¶q = " <<  total_th << endl;  
+			cout << "ç•¶å‰å›åˆ ç¸½ååé‡ = " <<  total_th << endl;  
 		}
 
-		cout <<  "¥­§¡320 MHzÀW¹D§Q¥Î²v = " <<  VAR_STA_chs_util[num][0] << endl;
-		cout <<  "¥­§¡160 MHzÀW¹D§Q¥Î²v = " <<  VAR_STA_chs_util[num][1] << endl;
+		cout <<  "å¹³å‡360 MHzé »é“åˆ©ç”¨ç‡ = " <<  VAR_STA_chs_util[num][0] << endl;
+		cout <<  "å¹³å‡180 MHzé »é“åˆ©ç”¨ç‡ = " <<  VAR_STA_chs_util[num][1] << endl;
 		
 		
 		 
 		 
 		for(int p = 0; p < 4; p++)
 		{
-			VAR_PRI_PEOPLE[p]+=1;//­Y¨Ï¥Î³æÀW¹D ¡A­Y¨Ï¥ÎÂùÀW¹D «h+5 
+			VAR_PRI_PEOPLE[p]+=1;
 		}
-		//alpha+=0.25; 
+		//alpha+=0.25;
+		//VAR_PRI_PEOPLE[num%4]+=5;
 	}
 	
 	if(Method > 1){
@@ -211,24 +225,22 @@ int main(int argc, char** argv) {
 			}					
 		}
 	}
-	//©Ò¦³¸ê®Æ³£·|¼gÀÉ¦b³o¸Ì 
-	if(Method < 2){
-		string file = "¹êÅçµ²ªG1ch/";
+	/*
+	if(Method == 0)
+	{
+		//æ•¸å­¸åˆ†æ èª¤å·®è¨ˆç®— 
+		vector<double> avg_Errs = get_anaErrRate(VAR_STA_D,VAR_STA_MD);
+		
+		for(int p = 0; p < 4; p++)
+		{
+			cout <<"å„ªå…ˆç´šåˆ¥ = "<< 4-p <<", å¹³å‡èª¤å·® = "<<avg_Errs[p]*100 << "%" << endl;
+		}
+	}*/
+	//writeData(Method,"VAR_STA_TH",VAR_STA_packet_lr);
+	//writeData(Method,"VAR_STA_TH",VAR_STA_packet_lr);
 
-		writeData(Method,file,"VAR_STA_TH", VAR_STA_TH);
-		writeData(Method,file,"VAR_STA_D", VAR_STA_D);
-		writeData(Method,file,"VAR_STA_packet_lr",VAR_STA_packet_lr);
-		writeData(Method,file,"VAR_STA_chs_util",VAR_STA_chs_util);
-	}
-	else{
-		string file = "¹êÅçµ²ªG2ch/";
-		writeData(Method,file,"VAR_STA_TH", VAR_STA_TH);
-		writeData(Method,file,"VAR_STA_D", VAR_STA_D);
-		writeData(Method,file,"DEV_AVG_TH", DEV_TH);
-		writeData(Method,file,"DEV_AVG_D", DEV_D);
-		writeData(Method,file,"VAR_STA_packet_lr",VAR_STA_packet_lr);
-		writeData(Method,file,"VAR_STA_chs_util",VAR_STA_chs_util);
-	}
+	//writeData(Method,"pad_VAR_STA_pl",VAR_STA_packet_lr);
+	//writeData(Method,"VAR_STA_cu",VAR_STA_chs_util);
 	
 
 	return 0;
