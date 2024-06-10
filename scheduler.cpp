@@ -92,7 +92,7 @@ void Scheduler::schedule_access(int method, double alpha)
 		{
 			ap->updateSTAs(curTime4A,-1,false,false,BandwidthA,1.0);
 			ap->sortSTAs(1);
-			BandwidthA = ap->opt_RCL(BandwidthA,true,false,false);
+			BandwidthA = ap->opt_RCL(BandwidthA,true,false,false);	// 
 			BandwidthA = ap->opt_FGC(BandwidthA,true,false,false);
 			cout << "剩餘頻寬 = " <<  BandwidthA << endl; 
 			//ap->print_info();
@@ -278,8 +278,8 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			else{
 				ap->updateSTAs(curTime4A,-1,false,false,Bandwidth,1.0);
 				ap->sortSTAs(1);
-				Bandwidth = ap->opt_RCL(Bandwidth,ch == 0,false,true);
-				Bandwidth = ap->opt_FGC(Bandwidth,ch == 0,false,true);
+				Bandwidth = ap->opt_RCL(Bandwidth,ch == 0,false,true);	//決定分配大小 
+				Bandwidth = ap->opt_FGC(Bandwidth,ch == 0,false,true);	//決定分配速率 
 				transTime = ap->find_avg_length(Time);
 			}
 			//int transTime = ap->find_avg_len4MLO1(false,Time, Time2 - SIFS*2 - ACK , 5000,-1);
