@@ -1,8 +1,8 @@
 #include "ap.h"
 using namespace std;
 
-//¥Î¨Ó¼g§Ú¸ò¨ä¥L½×¤å±Æµ{ªººtºâªk 
-//stationªººŞ²zªÌ 
+//ç”¨ä¾†å¯«æˆ‘è·Ÿå…¶ä»–è«–æ–‡æ’ç¨‹çš„æ¼”ç®—æ³• 
+//stationçš„ç®¡ç†è€… 
 using namespace std;
 AP::AP(int sim_time)
 {
@@ -14,7 +14,7 @@ AP::AP(int sim_time)
 	}
 	
 }
-//³Ñ¤UNSTR¸Ë¸m¤£¯à¥şÂù¤u 
+//å‰©ä¸‹NSTRè£ç½®ä¸èƒ½å…¨é›™å·¥ 
 void AP::updateSTAs(int curTime, int ch, bool isJoeFunc,bool two_ch_mode,int Bandwidth, double alpha) 
 {
 	for(int p = 0; p < 4; p++)
@@ -44,7 +44,7 @@ void AP::updateSTAs(int curTime, int ch, bool isJoeFunc,bool two_ch_mode,int Ban
 			
 
 			//cout << <<station_list[i].required_dr << endl;
-			//cout << station_list[p][i].STA_ID<<" ©Ò»İ¸ê®Æ³t²v§ó·s§¹²¦ = "  << station_list[p][i].required_dr << ", ·í«e«İ¶Ç«Ê¥]¤j¤p/bit = "<< station_list[p][i].cur_data_size << endl; 
+			//cout << station_list[p][i].STA_ID<<" æ‰€éœ€è³‡æ–™é€Ÿç‡æ›´æ–°å®Œç•¢ = "  << station_list[p][i].required_dr << ", ç•¶å‰å¾…å‚³å°åŒ…å¤§å°/bit = "<< station_list[p][i].cur_data_size << endl; 
 		}
 	}
 
@@ -64,7 +64,7 @@ void AP::opt_updateSTAs(int curTime, int ch,int sim_time, int Bandwidth)
 			else if(Bandwidth == 148) MAX_DR = 2402;
 			else MAX_DR = 1201;
 			STA->updateRMRU(curTime,sim_time,MAX_DR,Bandwidth);
-			//cout << STA->STA_ID<<"»İ­n"<<MRUs[STA->MRU_idx]<<"-tone MRU" << endl; 
+			//cout << STA->STA_ID<<"éœ€è¦"<<MRUs[STA->MRU_idx]<<"-tone MRU" << endl; 
 		}
 	}
 }
@@ -86,9 +86,9 @@ int AP::allocDR(bool two_ch_mode, int m, int p, int ch)
 		total_DR+=MRUs_dr[stoi(data_rate_idx)];
 		count_26+=MRUsToIdx[MRUs[stoi(data_rate_idx)]];
 		int idx = stoi(data_rate_idx);
-		//cout << station_list[p][stoi(sta)].STA_ID<<" ¨Ï¥Î26-tone ¼Æ¶q = "  << MRUsToIdx[MRUs[idx]] << ", ´«¦¨MRU = "<< MRUs[idx] << ", ¸ê®Æ³t²v = "<< MRUs_dr[stoi(data_rate_idx)] << endl; 
+		//cout << station_list[p][stoi(sta)].STA_ID<<" ä½¿ç”¨26-tone æ•¸é‡ = "  << MRUsToIdx[MRUs[idx]] << ", æ›æˆMRU = "<< MRUs[idx] << ", è³‡æ–™é€Ÿç‡ = "<< MRUs_dr[stoi(data_rate_idx)] << endl; 
 	}
-	//cout << "Á`¸ê®Æ³t²v = " <<  total_DR << ", ¨Ï¥Î¤F¦h¤Ö26-tone = "<<count_26 <<endl; 
+	//cout << "ç¸½è³‡æ–™é€Ÿç‡ = " <<  total_DR << ", ä½¿ç”¨äº†å¤šå°‘26-tone = "<<count_26 <<endl; 
 	return count_26;
 
 }
@@ -96,7 +96,7 @@ int AP::allocDR(bool two_ch_mode, int m, int p, int ch)
 /*
 	double tmp = (arr + STA->ana_remainData) / STA->data_rate;
 			if(STA->data_rate != 0.0){
-				double lam = (arr)/MPDU_LENS[p];// T/1000 ¬ùµ¥©ó30·L¬í¨Ó¦h¤Ö­Ó«Ê¥] 
+				double lam = (arr)/MPDU_LENS[p];// T/1000 ç´„ç­‰æ–¼30å¾®ç§’ä¾†å¤šå°‘å€‹å°åŒ… 
 				double mu = STA->data_rate/MPDU_LENS[p];
 				double k = th_now * sim_time/MPDU_LENS[p]/T;
 				cout <<"lam = " <<lam << ", mu = " << mu << endl;
@@ -123,7 +123,7 @@ int AP::allocDR(bool two_ch_mode, int m, int p, int ch)
 */
 void AP::cal_STAs_ana(int T, int sim_time)
 {
-	//­pºâ¥X1 mus¥­§¡·|¦³¦h¤Ö§]¦R¶q *10^6 => §Y¥i±À±o¥­§¡¨C¬í§]¦R¶q 
+	//è¨ˆç®—å‡º1 muså¹³å‡æœƒæœ‰å¤šå°‘ååé‡ *10^6 => å³å¯æ¨å¾—å¹³å‡æ¯ç§’ååé‡ 
 	double usedTDR = 0.0;
 	for(int p = 0; p < 4; p++)
 	{
@@ -156,7 +156,7 @@ void AP::cal_STAs_ana(int T, int sim_time)
 			while(STA->ana_RF_idx < STA->ana_RFs.size() && tmp_th_now > 0.0)
 			{
 				double curFlow = 0.0;
-				//»İ­n¦Ò¼{¬Y®É¬qªº«Ê¥]¹L´Á
+				//éœ€è¦è€ƒæ…®æŸæ™‚æ®µçš„å°åŒ…éæœŸ
 				 
 				if(STA->ana_RFs[STA->ana_RF_idx] > tmp_th_now)
 				{
@@ -171,7 +171,7 @@ void AP::cal_STAs_ana(int T, int sim_time)
 					STA->ana_RFs[STA->ana_RF_idx] = 0.0;
 					//STA->ana_RF_idx+=1;
 				}
-				//­pºâdelay
+				//è¨ˆç®—delay
 				double curN = curFlow / MPDU_LENS[p];
 				STA->ana_SN+=curN;
 				 
@@ -182,7 +182,7 @@ void AP::cal_STAs_ana(int T, int sim_time)
 			
 			STA->ana_avgDR+=double(T) / sim_time *  STA->data_rate;
 			STA->ana_remainData+=(arr - STA->data_rate) * T / sim_time;
-			STA->ana_remainData-=double(STA->cur_expired_size)/sim_time;//¬°¤F»P¤W¤@¦æ¥¿³W¤Æ¡A»İ­n­¼¤WT/sim_time¡A¦P®É¤]­n°£¤WT¤~¯àª¾¹D¥­§¡mus¦³¦h¤Ö¹L´Á«Ê¥]bit©M 
+			STA->ana_remainData-=double(STA->cur_expired_size)/sim_time;//ç‚ºäº†èˆ‡ä¸Šä¸€è¡Œæ­£è¦åŒ–ï¼Œéœ€è¦ä¹˜ä¸ŠT/sim_timeï¼ŒåŒæ™‚ä¹Ÿè¦é™¤ä¸ŠTæ‰èƒ½çŸ¥é“å¹³å‡musæœ‰å¤šå°‘éæœŸå°åŒ…bitå’Œ 
 			STA->ana_remainData = STA->ana_remainData < 0.0?0.0:STA->ana_remainData;			
 			STA->last_expired_size = STA->cur_expired_size;
 			
@@ -193,7 +193,7 @@ void AP::cal_STAs_ana(int T, int sim_time)
 }
 
 
-int AP::find_avg_length(int curTime)//³o¸Ì¦³°İÃD 
+int AP::find_avg_length(int curTime)//é€™è£¡æœ‰å•é¡Œ 
 {
     double l = 0.0;
     int c = 0;
@@ -216,7 +216,7 @@ int AP::find_avg_length(int curTime)//³o¸Ì¦³°İÃD
     if(t>32768) t = 32768;
     if(t < 5000) t = 5000;
     if(curTime + t > sim_time) t = sim_time - curTime;
-    cout << "¶Ç¿é®É¶¡ = " << t << endl; 
+    //cout << "å‚³è¼¸æ™‚é–“ = " << t << endl; 
     return t;
 }
 
@@ -229,26 +229,26 @@ int AP::find_avg_len4MLO0(int curTime)
     	for (size_t i = 0; i < station_list[p].size(); i++)
     	{
     		Station* STA = &station_list[p][i];
-    		double tmp = double(STA->cur_data_size)/(STA->allocDRs[0][0] + STA->allocDRs[0][1]); //¤£­n¥Îcur_data_size¡A°_½X­n¤ñ¨Ò EX: drA/(drA+drB) * cur_data_size
-    		//cout << station_list[i].STA_ID<<" ²z·Q¶Ç¿é®É¶¡/mus = "  << tmp << endl; 
+    		double tmp = double(STA->cur_data_size)/(STA->allocDRs[0][0] + STA->allocDRs[0][1]); //ä¸è¦ç”¨cur_data_sizeï¼Œèµ·ç¢¼è¦æ¯”ä¾‹ EX: drA/(drA+drB) * cur_data_size
+    		//cout << station_list[i].STA_ID<<" ç†æƒ³å‚³è¼¸æ™‚é–“/mus = "  << tmp << endl; 
     		if(isinf(tmp) || fabs(tmp) < 1e-15 || isnan(tmp)) continue;
         	l += tmp;
         	c+=1;
     	}
 	}
 
-    cout << l << " " << c << endl;
+    //cout << l << " " << c << endl;
     int t = round(l/c);
     //cout << t << endl;
     if(t>32768) t = 32768;
     if(t < 5000) t = 5000;
     if(curTime + t > sim_time) t = sim_time - curTime;
-    //cout << "¶Ç¿é®É¶¡ = " << t << endl; 
+    //cout << "å‚³è¼¸æ™‚é–“ = " << t << endl; 
     return t;
 }
 
 
-int AP::find_avg_len4MLO1(bool two_ch_mode,int curTime, int targetTime, int toleranceThs, int ch)// target time °O±o¦Ò¼{sifs + ack 
+int AP::find_avg_len4MLO1(bool two_ch_mode,int curTime, int targetTime, int toleranceThs, int ch)// target time è¨˜å¾—è€ƒæ…®sifs + ack 
 {
 	double l = 0.0;
 	int c = 0;
@@ -268,35 +268,35 @@ int AP::find_avg_len4MLO1(bool two_ch_mode,int curTime, int targetTime, int tole
     	}
 	}
 
-    cout << l << " " << c << endl;
+    //cout << l << " " << c << endl;
     int t = round(l/c);
     //cout << t << endl;
     if(t>32768) t = 32768;
     if(t < 5000) t = 5000;
     if(targetTime!=-1 && curTime + t + toleranceThs >= targetTime) t = targetTime - curTime;
     if(curTime + t > sim_time) t = sim_time - curTime;
-    //cout <<"ÀW¹D = "<< ch << ", ¶Ç¿é®É¶¡ = " << t << endl;
+    //cout <<"é »é“ = "<< ch << ", å‚³è¼¸æ™‚é–“ = " << t << endl;
     return t;
 }
 void AP::print_info()
 {
 	double sum_dr = 0.0;
-	cout << "¦C¦LSTAs¸ê°T"<<endl; 
+	//cout << "åˆ—å°STAsè³‡è¨Š"<<endl; 
 	for(int p = 0; p < 4; p++)
 	{
 		for(int i = 0; i <station_list[p].size(); i++)
 		{
 			Station* STA = &station_list[p][i];
 			//cout <<STA->STA_ID<<", "<<STA->allocDRs[0][0] << ", "<< STA->allocDRs[0][1] <<", "<<STA->allocDRs[1][0] << ", "<< STA->allocDRs[1][1]<< endl;
-			cout << STA->STA_ID<<", "<<STA->data_rate << endl;
+			//cout << STA->STA_ID<<", "<<STA->data_rate << endl;
 			sum_dr+=STA->data_rate;
 		}
 	}
-	cout << "¦¹¦¸¤À°tÁ`¦@ DR = " << sum_dr << endl;
+	//cout << "æ­¤æ¬¡åˆ†é…ç¸½å…± DR = " << sum_dr << endl;
 }
  
 
-//¹êÅç OFDMAªºduration ¨ì©³­n¤£­n¼g¦º
+//å¯¦é©— OFDMAçš„duration åˆ°åº•è¦ä¸è¦å¯«æ­»
 // 
 
 int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
@@ -336,8 +336,8 @@ int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, i
 	    }
 	}
 	alloc_result = dp[Bandwidth].second;
-	//cout <<"±Æµ{µ²ªG = "<< alloc_result<<endl;
-	int remain_BW = two_ch_mode?Bandwidth - allocDR(true,m,p,ch):Bandwidth - allocDR(false,-1,p,-1); // allocDR¨ºÃä­n±NDR ASSIGNµ¹ STAªºallocDRs
+	//cout <<"æ’ç¨‹çµæœ = "<< alloc_result<<endl;
+	int remain_BW = two_ch_mode?Bandwidth - allocDR(true,m,p,ch):Bandwidth - allocDR(false,-1,p,-1); // allocDRé‚£é‚Šè¦å°‡DR ASSIGNçµ¦ STAçš„allocDRs
 	//int remain_BW = Bandwidth - allocDR(false,-1,p,-1);
 	reOrderSTAs(p);
 	return remain_BW;
@@ -363,7 +363,7 @@ double AP::getEDR4STA(double EDRch, double usedRD_A, double usedRD_B, double RD,
 
 void AP::twoChUsersAlloc()
 {
-	//«Ø¥ß2*4*2ªºvec¡A¥Î©ó²Î­p·í«e¤À°tData Rate;2 mlo, 4 pri, 2 ch
+	//å»ºç«‹2*4*2çš„vecï¼Œç”¨æ–¼çµ±è¨ˆç•¶å‰åˆ†é…Data Rate;2 mlo, 4 pri, 2 ch
 	vector<vector<vector<double>>> usedRDs(2, vector<vector<double>>(4, vector<double>(2, 0.0)));
 	for(int p = 0; p < 4; p++)
 	{
@@ -427,7 +427,7 @@ void AP::twoChUsersAlloc()
 /*
 int AP::knaspack_sra(int curTime, int Bandwidth, int p) //2d DP 
 {
-	//pair <int, map<int, double>> element; ¦¬¯q,MRU°t¸m  
+	//pair <int, map<int, double>> element; æ”¶ç›Š,MRUé…ç½®  
 	pair<double, string> dp[station_list[p].size()+1][Bandwidth+1];
 	//dp to all 0
 	alloc_result = "";
@@ -448,7 +448,7 @@ int AP::knaspack_sra(int curTime, int Bandwidth, int p) //2d DP
 			while(idxToMRUs[j] >= MRUs[c])
 			{
 				double tmp_dr = min(MRUs_dr[c], station_list[p][i-1].required_dr);
-				//cout << "j = " << j << ", ¤À°tµ¹«ei-1­Ó¥Î¤á = "<<  j - MRUsToIdx[MRUs[c]] <<", ¤À°t²Äi­Ó¥Î¤á = "<<MRUsToIdx[MRUs[c]]<<endl; 
+				//cout << "j = " << j << ", åˆ†é…çµ¦å‰i-1å€‹ç”¨æˆ¶ = "<<  j - MRUsToIdx[MRUs[c]] <<", åˆ†é…ç¬¬iå€‹ç”¨æˆ¶ = "<<MRUsToIdx[MRUs[c]]<<endl; 
 				if (dp[i][j].first < dp[i-1][j - MRUsToIdx[MRUs[c]]].first + tmp_dr)
 				{
 					dp[i][j].first = dp[i-1][j - MRUsToIdx[MRUs[c]]].first + tmp_dr; //trouble here out of mem
@@ -472,7 +472,7 @@ int AP::knaspack_sra(int curTime, int Bandwidth, int p) //2d DP
 	}
 
 	alloc_result = dp[station_list[p].size()][Bandwidth].second;
-	cout <<"±Æµ{µ²ªG = "<< alloc_result<<endl;
+	cout <<"æ’ç¨‹çµæœ = "<< alloc_result<<endl;
 	int remain_BW = Bandwidth - allocDR(p);
 	return remain_BW;
 	
@@ -489,7 +489,7 @@ void AP::transmit2STAs(int curTime, int transTime)
 			if(fabs(STA->data_rate) < 1e-15) continue;
 			int throughput = min(static_cast<int>(round(transTime * STA->data_rate)), STA->cur_data_size);
 			STA->cur_sum_DR+=throughput;
-			//cout << "¥i¶Ç§]¦R¶q = " << throughput<<", idx = "<< station_list[p][i].startIdx << endl;
+			//cout << "å¯å‚³ååé‡ = " << throughput<<", idx = "<< station_list[p][i].startIdx << endl;
 			int* startIdx = &STA->startIdx;
 			double sum_trans_dealy = 0.0;
 			while(throughput > 0 && *startIdx < STA->packets.size())
@@ -500,8 +500,8 @@ void AP::transmit2STAs(int curTime, int transTime)
 					throughput-=STA->packets[*startIdx].packetSize;
 					STA->cur_data_size-=STA->packets[*startIdx].packetSize;
 					sum_trans_dealy+=double(STA->packets[*startIdx].packetSize) / STA->data_rate;
-					STA->total_dealy_time+= curTime + sum_trans_dealy - STA->packets[*startIdx].arrival_time;//³Ì²×¥Øªº¡A­pºâ¥ş³¡«Ê¥]ªºÁ`©µ¿ğ®É¶¡ ³q¹L°£¥H¦¨¥\¶Ç¿éªº¦¸¼Æsuccess_trans
-					*startIdx+=1;//¦¹«Ê¥]¶Ç¿é§¹¦¨
+					STA->total_dealy_time+= curTime + sum_trans_dealy - STA->packets[*startIdx].arrival_time;//æœ€çµ‚ç›®çš„ï¼Œè¨ˆç®—å…¨éƒ¨å°åŒ…çš„ç¸½å»¶é²æ™‚é–“ é€šéé™¤ä»¥æˆåŠŸå‚³è¼¸çš„æ¬¡æ•¸success_trans
+					*startIdx+=1;//æ­¤å°åŒ…å‚³è¼¸å®Œæˆ
 					STA->success_trans+=1;
 					STA->cur_suc_packet+=1;
 				}
@@ -521,7 +521,7 @@ void AP::transmit2STAs(int curTime, int transTime)
 
 void AP::sim_transmit2STAs(int curTime,int transTimeA, int transTimeB, int m)
 {
-	//dealy, success_trans_nth §ï¬°®Ú¾Úmªº1d vec 
+	//dealy, success_trans_nth æ”¹ç‚ºæ ¹æ“šmçš„1d vec 
 	for(int p = 0; p < 4; p++)
 	{
 		for (int i = 0; i < station_list[p].size(); i++)
@@ -545,18 +545,18 @@ void AP::sim_transmit2STAs(int curTime,int transTimeA, int transTimeB, int m)
 			int throughput = min(static_cast<int>(round(commonTime * (STA->allocDRs[m][0]+STA->allocDRs[m][1]))), STA->cur_data_sizes[m]);
 			int* startIdx = &STA->startIdxs[m];
 			int* curPS = &STA->last_packet_sizes[m];
-			//¥Ø«e¬İ¤U¨Ó startIdxs,cur_data_sizes, delays, success_trans_nth ³£¥u»İ­n®Ú¾Ú mlo§Y¥i 
-			//cout << "¥i¶Ç§]¦R¶q = " << throughput<<", idx = "<< station_list[p][i].startIdx << endl; 
+			//ç›®å‰çœ‹ä¸‹ä¾† startIdxs,cur_data_sizes, delays, success_trans_nth éƒ½åªéœ€è¦æ ¹æ“š mloå³å¯ 
+			//cout << "å¯å‚³ååé‡ = " << throughput<<", idx = "<< station_list[p][i].startIdx << endl; 
 			while(throughput > 0 && *startIdx < STA->packets.size())
 			{
 				
-				if(throughput >= *curPS)//¥i¥H¶Ç§¹¾ã­Ó«Ê¥] 
+				if(throughput >= *curPS)//å¯ä»¥å‚³å®Œæ•´å€‹å°åŒ… 
 				{
 					throughput-=*curPS;
 					STA->cur_data_sizes[m]-=*curPS;
 					sum_trans_dealy+= double(*curPS) / (STA->allocDRs[m][0] + STA->allocDRs[m][1]);
 					STA->delays[m]+= curTime + sum_trans_dealy \
-					- STA->packets[*startIdx].arrival_time;//³Ì²×¥Øªº¡A­pºâ¥ş³¡«Ê¥]ªºÁ`©µ¿ğ®É¶¡ ³q¹L°£¥H¦¨¥\¶Ç¿éªº¦¸¼Æsuccess_trans
+					- STA->packets[*startIdx].arrival_time;//æœ€çµ‚ç›®çš„ï¼Œè¨ˆç®—å…¨éƒ¨å°åŒ…çš„ç¸½å»¶é²æ™‚é–“ é€šéé™¤ä»¥æˆåŠŸå‚³è¼¸çš„æ¬¡æ•¸success_trans
 					*startIdx+=1;
 					STA->success_trans_nth[m]+=1;
 					*curPS = STA->packet_size;
@@ -571,13 +571,13 @@ void AP::sim_transmit2STAs(int curTime,int transTimeA, int transTimeB, int m)
 			sum_trans_dealy = 0;
 			while(throughput > 0 && *startIdx < STA->packets.size())
 			{
-				if(throughput >= *curPS)//¥i¥H¶Ç§¹¾ã­Ó«Ê¥] 
+				if(throughput >= *curPS)//å¯ä»¥å‚³å®Œæ•´å€‹å°åŒ… 
 				{
 					throughput-=*curPS;
 					STA->cur_data_sizes[m]-=*curPS;
 					sum_trans_dealy+=double(*curPS) / STA->allocDRs[m][extraCh];
 					STA->delays[m]+= curTime + commonTime + sum_trans_dealy\
-					- STA->packets[*startIdx].arrival_time;//³Ì²×¥Øªº¡A­pºâ¥ş³¡«Ê¥]ªºÁ`©µ¿ğ®É¶¡ ³q¹L°£¥H¦¨¥\¶Ç¿éªº¦¸¼Æsuccess_trans
+					- STA->packets[*startIdx].arrival_time;//æœ€çµ‚ç›®çš„ï¼Œè¨ˆç®—å…¨éƒ¨å°åŒ…çš„ç¸½å»¶é²æ™‚é–“ é€šéé™¤ä»¥æˆåŠŸå‚³è¼¸çš„æ¬¡æ•¸success_trans
 					*startIdx+=1;
 					STA->success_trans_nth[m]+=1;
 					*curPS = STA->packet_size;
@@ -641,7 +641,7 @@ void AP::sortSTAs(int method)
 	}
 	
 }
-//­n¼g­Ófunction alloc dr - rd 
+//è¦å¯«å€‹function alloc dr - rd 
 void AP::opt_filter()
 {
 	for(int p = 0; p < 4; p++)
@@ -656,7 +656,7 @@ void AP::opt_filter()
 		}
 	}
 }
-int AP::opt_RCL(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)//two_ch«üªº¬O°µÂùÀW¹Dªº¹êÅç¡A two_ch_mode«h¬OÀò¨ú¦P®É¨â­ÓÀW¹D 
+int AP::opt_RCL(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)//two_chæŒ‡çš„æ˜¯åšé›™é »é“çš„å¯¦é©—ï¼Œ two_ch_modeå‰‡æ˜¯ç²å–åŒæ™‚å…©å€‹é »é“ 
 {
 	int ch = isCHA? 0:1;
 	for(int p = 0; p < 4; p++)
