@@ -52,7 +52,7 @@ void Scheduler::generate_traffic(vector<double> SL_STR_NSTR_RATIO,vector<int> pr
 		        last_arrival += inter_arrival;
 		        packetCount+=1;
 		    }
-		    cout <<"優先級:"<< i  << ", STA ID:"<< STA_ID <<", 封包總數: " << packetCount << endl;
+		    //cout <<"優先級:"<< i  << ", STA ID:"<< STA_ID <<", 封包總數: " << packetCount << endl;
 		    ap->station_list[i][j] = station;
 		    STA_ID+=1;
 		}
@@ -94,7 +94,7 @@ void Scheduler::schedule_access(int method, double alpha)
 			ap->sortSTAs(1);
 			BandwidthA = ap->opt_RCL(BandwidthA,true,false,false);	// 
 			BandwidthA = ap->opt_FGC(BandwidthA,true,false,false);
-			cout << "剩餘頻寬 = " <<  BandwidthA << endl; 
+			//cout << "剩餘頻寬 = " <<  BandwidthA << endl; 
 			//ap->print_info();
 		}
 		transTime = ap->find_avg_length(curTime4A);//
@@ -113,7 +113,7 @@ void Scheduler::schedule_access(int method, double alpha)
 		}
 		
 		 //延遲傳輸的話 傳輸時間可以拉高很多 
-		cout << "當前時間 = " <<  curTime4A << endl; 
+		//cout << "當前時間 = " <<  curTime4A << endl; 
 		c+=1;
 	}
 	ap->sortSTAs(0);
@@ -191,20 +191,20 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			
 			double ebr_mlo0 = method == 2?ap->evalEBR(0,mlo0_trans_time,mlo0_trans_time):-1;
 			double ebr_mlo1 = ap->evalEBR(1,mlo1_trans_timeA,mlo1_trans_timeB);
-			cout << "EBR MLO 0 = " << ebr_mlo0 <<", EBR MLO 1 = "<<ebr_mlo1<<endl;
+			//cout << "EBR MLO 0 = " << ebr_mlo0 <<", EBR MLO 1 = "<<ebr_mlo1<<endl;
 			int durationA = SIFS + 0 + SIFS + ACK;
 			int durationB = durationA;
 			bool sync_mode = false;
 			if(ebr_mlo0 >= ebr_mlo1)
 			{
-				cout << "使用 EOSYNC Model" << endl;
+				//cout << "使用 EOSYNC Model" << endl;
 				sync_mode = true;
 				durationA+=mlo0_trans_time;
 				durationB+=mlo0_trans_time;
 			}
 			else
 			{
-				cout << "使用 EOASYNC Model"<<endl;
+				//cout << "使用 EOASYNC Model"<<endl;
 				durationA+=mlo1_trans_timeA;
 				durationB+=mlo1_trans_timeB;
 			}
@@ -315,7 +315,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			
 		}
 		 //延遲傳輸的話 傳輸時間可以拉高很多 
-		cout << "當前時間 在頻道A = " <<  curTime4A<<", 在頻道B = "<< curTime4B << endl; 
+		//cout << "當前時間 在頻道A = " <<  curTime4A<<", 在頻道B = "<< curTime4B << endl; 
 		c+=1;
 		flagA = curTime4A < sim_time;
 		flagB = curTime4B < sim_time;
