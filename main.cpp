@@ -7,7 +7,7 @@
 using namespace std;
 int D = 5;
 int MILLION = 1000000;
-int T = 5;
+int T = 1; //原測資為5 
 const vector<double> SL_STR_NSTR_RATIO = {0.2,0.4,0.4}; 
 const vector<int> PRI_PEOPLE = vector<int>{5,5,5,5};// 4*7的情況下 頻寬3600 ARR = 4060 會得到  3220  //更動為5個 
 const vector<int> TRAFFIC_ARRIVAL_RATES = vector<int>{20,160,300,100};// Mbit 20 160 300 100 => 2250  //更動為五個 
@@ -51,8 +51,8 @@ vector<double> get_anaErrRate(vector<vector<double>> THs,vector<vector<double>> 
 
 
 int main(int argc, char** argv) {
-	int Method = 1;
-	double alpha = 2.75;
+	int Method = 1;  //自己調整方法 
+	double alpha = 2.75;  //對手自身參數設置 
 	double sim_time = MILLION * D;
 	
 	vector<vector<double>> STAs_TH(4);
@@ -70,8 +70,10 @@ int main(int argc, char** argv) {
 	int finPN = 60;
 	int initAlpha = alpha;
 	int finAlpha = alpha + 4;
-	int round4VarP = (finPN - initPN)/4 + 1;//finPN - initPN)/20 + 1
-	int round4VarAlpha = (finAlpha - initAlpha)*4 + 1;
+	//	int round4VarP = (finPN - initPN)/4 + 1;//finPN - initPN)/20 + 1
+	//	int round4VarAlpha = (finAlpha - initAlpha)*4 + 1;
+	int round4VarP = 1; 
+	
 	vector<vector<double>> VAR_STA_TH(round4VarP,vector<double>(4,0.0));//20~100共9個
 	vector<vector<double>> VAR_STA_MTH(round4VarP,vector<double>(4,0.0));//Math  
 	vector<vector<double>> VAR_STA_MD(round4VarP,vector<double>(4,0.0));//Math 
@@ -143,11 +145,11 @@ int main(int argc, char** argv) {
 					}
 
 					
-					
+					cout << Method << endl;
 					cout << "STA ID:"<< STA->STA_ID <<", 封包總數 = " << STA->packets.size() << ", success transmission = " << STA->success_trans<<", 吞吐量 = "<< STA_TH  <<", 延遲 = "<< STA_dealy  << endl;
 					cout << "封包遺失率 = " << (double)STA->n_expired_packet / STA->packets.size() << ", 在A頻道傳輸數量 = " << STA->n_suc_packet_chA <<", 在B頻道傳輸數量 = "<< STA->n_suc_packet_chB  << endl;
 					cout << "Device type = " << STA->device << endl;
-					if(Method == 0) cout << "數學分析, 吞吐量 = " << STA->ana_TH << ", 平均延遲 = " << STA_ana_D  <<", success transmission = " <<STA->ana_SN<<endl;
+					if(Method == 0) //cout << "數學分析, 吞吐量 = " << STA->ana_TH << ", 平均延遲 = " << STA_ana_D  <<", success transmission = " <<STA->ana_SN<<endl;
 					if(Method > 1)
 					{
 						int dt = -1;
@@ -190,8 +192,8 @@ int main(int argc, char** argv) {
 			cout << "當前回合 總吞吐量 = " <<  total_th << endl;  
 		}
 
-		cout <<  "平均360 MHz頻道利用率 = " <<  VAR_STA_chs_util[num][0] << endl;
-		cout <<  "平均180 MHz頻道利用率 = " <<  VAR_STA_chs_util[num][1] << endl;
+		cout <<  "平均320 MHz頻道利用率 = " <<  VAR_STA_chs_util[num][0] << endl;
+		cout <<  "平均160 MHz頻道利用率 = " <<  VAR_STA_chs_util[num][1] << endl;
 		
 		
 		 
