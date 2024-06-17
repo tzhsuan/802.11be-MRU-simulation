@@ -20,13 +20,15 @@ public:
 	vector<vector<double>> allocDRs = {{0.0,0.0},{0.0,0.0}};
 	
 	vector<int> success_trans_nth = {0,0};
-	vector<double> delays = {0.0,0.0}; //¥Ø«e¦Ò¼{1d 
+	vector<double> delays = {0.0,0.0}; //ç›®å‰è€ƒæ…®1d 
 	
-	//®Ú¾Ú2­ÓMLO 
+	//æ ¹æ“š2å€‹MLO 
 	vector<int> cur_data_sizes = {0,0};
 	vector<int> startIdxs = {0,0};
 	
 	vector<int> last_packet_sizes = {0,0};
+	
+	vector<int> MCS(144,0); //MCS index
 	
 	string device;//STR NSTR SL
 	double required_dr_A = 0.0;
@@ -37,7 +39,7 @@ public:
 	int priority;//0~3
 	double required_dr = 0.0;
 	double data_rate = 0.0;
-	int success_trans = 0;//¦¨¥\¶Ç¿é 
+	int success_trans = 0;//æˆåŠŸå‚³è¼¸ 
 	int sim_time = 0;
 	int packet_size = 0;
 	
@@ -60,7 +62,7 @@ public:
 	int ana_RF_idx = 0;
 	double ana_SN = 0.0;//successful trans count
 	double ana_SD = 0.0;//(sum)a unit means one ms.
-	
+
 	
 	
 	int last_begin_trans_ChA = -1;
@@ -87,7 +89,7 @@ public:
  	static bool compareByRD(const Station&, const Station&);
 	
 private:
-	vector<int> upperBoundMRU = {1,2,3,4,5,9,18,27,36,54,72,90,108,126,144};//ª½¨ì90 
+	vector<int> upperBoundMRU = {1,2,3,4,5,9,18,27,36,54,72,90,108,126,144};//ç›´åˆ°90 
 	
 
 };
