@@ -36,9 +36,12 @@ void AP::updateSTAs(int curTime, int ch, bool isJoeFunc,bool two_ch_mode,int Ban
 			STA->updateRD(curTime,ch,isJoeFunc,two_ch_mode,Bandwidth,alpha);
 			if(!isJoeFunc){
 				int MAX_DR = -1;
-				if(Bandwidth == 148+74) MAX_DR = 3603;
-				else if(Bandwidth == 148) MAX_DR = 2402;
-				else MAX_DR = 1201;
+//				if(Bandwidth == 148+74) MAX_DR = 3603;
+//				else if(Bandwidth == 148) MAX_DR = 2402;
+//				else MAX_DR = 1201;
+    			if(Bandwidth == 148+74)	MAX_DR = 4*966*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8) + 2*966*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+				else if(Bandwidth == 148) MAX_DR = (4*966)*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+				else MAX_DR = (2*996)*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
 				STA->updateRMRU(curTime,sim_time,MAX_DR,Bandwidth);
 			}
 			
@@ -60,9 +63,12 @@ void AP::opt_updateSTAs(int curTime, int ch,int sim_time, int Bandwidth)
 			STA->updateExpired(curTime);
 			STA->updateRD(curTime,ch,false,false,Bandwidth,1.0);
 			int MAX_DR = -1;
-			if(Bandwidth == 148+74) MAX_DR = 3603;
-			else if(Bandwidth == 148) MAX_DR = 2402;
-			else MAX_DR = 1201;
+//			if(Bandwidth == 148+74) MAX_DR = 3603;
+//			else if(Bandwidth == 148) MAX_DR = 2402;
+//			else MAX_DR = 1201;
+            if(Bandwidth == 148+74)	MAX_DR = 4*966*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8) + 2*966*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+			else if(Bandwidth == 148) MAX_DR = (4*966)*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+			else MAX_DR = (2*996)*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
 			STA->updateRMRU(curTime,sim_time,MAX_DR,Bandwidth);
 			//cout << STA->STA_ID<<"需要"<<MRUs[STA->MRU_idx]<<"-tone MRU" << endl; 
 		}
@@ -315,8 +321,14 @@ int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, i
 	        {
 	        	 
 	        	double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;
-	        	
-	            double tmp_dr = min(MRUs_dr[c], RD);
+	        	double tmp_dr;
+	        	if (ch == 0){
+	        		double tmp_dr = min(MRUs[c]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8), RD);
+				}
+				else{
+	        		double tmp_dr = min(MRUs[c]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8), RD);
+				}
+	            //double tmp_dr = min(MRUs_dr[c], RD);
 	            if (dp[j].first < dp[j - MRUsToIdx[MRUs[c]]].first + tmp_dr)
 	            {
 	                dp[j].first = dp[j - MRUsToIdx[MRUs[c]]].first + tmp_dr;
@@ -669,10 +681,13 @@ int AP::opt_RCL(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)//two_c
 			int tmp = Bandwidth - MRUsToIdx[MRUs[STA->MRU_idx]];
 			if(tmp < 0) return Bandwidth;
 			if(two_ch_mode){
-				STA->allocDRs[1][ch] = MRUs_dr[STA->MRU_idx];
+				//STA->allocDRs[1][ch] = MRUs_dr[STA->MRU_idx];
+				if(ch == 1)	STA->allocDRs[1][ch] = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+				else STA->allocDRs[1][ch] = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
 			}
 			else{
-				STA->data_rate = MRUs_dr[STA->MRU_idx];
+				//STA->data_rate = MRUs_dr[STA->MRU_idx];
+				STA->data_rate = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
 			}
 			
 			Bandwidth = tmp;
@@ -699,12 +714,15 @@ int AP::opt_FGC(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)
 				Bandwidth-=compensate;
 				if(Bandwidth == 0) return 0;
 				STA->MRU_idx+=compensate;
-				STA->data_rate = MRUs_dr[STA->MRU_idx];
+				//STA->data_rate = MRUs_dr[STA->MRU_idx];
 				if(two_ch_mode){
-					STA->allocDRs[1][ch] = MRUs_dr[STA->MRU_idx];
+					//STA->allocDRs[1][ch] = MRUs_dr[STA->MRU_idx];
+					if(ch == 1)	STA->allocDRs[1][ch] = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+					else STA->allocDRs[1][ch] = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
 				}
 				else{
-					STA->data_rate = MRUs_dr[STA->MRU_idx];
+					//STA->data_rate = MRUs_dr[STA->MRU_idx];
+					STA->data_rate = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
 				}
 			}
 		}
