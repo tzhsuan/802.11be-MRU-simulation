@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
 	//vector<vector<double>> alpha_TH(20,vector<double>(4,0.0));
 	//vector<vector<double>> alpha_D(20,vector<double>(4,0.0));
 	
-	vector<int> VAR_PRI_PEOPLE = vector<int>{1,1,1,1};
+	vector<int> VAR_PRI_PEOPLE = vector<int>{5,5,5,5};
 	//vector<int> VAR_TRAFFIC_ARRIVAL_RATES = vector<int>{10,80,150,50};
 	
 	int initPN = 4;
@@ -145,8 +145,10 @@ int main(int argc, char** argv) {
 					}
 
 					
-					cout << Method << endl;
-					cout << "STA ID:"<< STA->STA_ID <<", 封包總數 = " << STA->packets.size() << ", success transmission = " << STA->success_trans<<", 吞吐量 = "<< STA_TH  <<", 延遲 = "<< STA_dealy  << endl;
+					cout << "Method= " << Method << endl;
+					std::cout <<"minMCS = "<< STA->minMCS_B << endl;
+					cout <<"優先級別 = "<< 4-p << endl;
+					cout << "STA ID:"<< STA->STA_ID <<", 封包總數 = " << STA->packets.size() << ", success transmission = " << STA->success_trans<<", 吞吐量 = "<< STA_TH  <<", 延遲 = "<< STA_dealy << endl;
 					cout << "封包遺失率 = " << (double)STA->n_expired_packet / STA->packets.size() << ", 在A頻道傳輸數量 = " << STA->n_suc_packet_chA <<", 在B頻道傳輸數量 = "<< STA->n_suc_packet_chB  << endl;
 					cout << "Device type = " << STA->device << endl;
 					if(Method == 0) //cout << "數學分析, 吞吐量 = " << STA->ana_TH << ", 平均延遲 = " << STA_ana_D  <<", success transmission = " <<STA->ana_SN<<endl;
