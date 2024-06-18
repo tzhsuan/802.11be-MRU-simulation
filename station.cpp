@@ -21,21 +21,36 @@ Station::Station(string device, int STA_ID,int priority, int sim_time, int packe
 	this->sim_time = sim_time;
 	this->packet_size = packet_size;
 	last_packet_sizes[0] = last_packet_sizes[1] = packet_size;
+	
+	//æš«å®šé¸ç”¨randé¸å–MCS indexï¼Œä¹‹å¾Œå¯èƒ½é¸ç”¨10%-50%é »é“å—å¹²æ“¾åšå¯¦é©— 
+	for(int i=0; i<72; i++)
+	{
+		MCS_A[i] = rand()%12;
+		if(minMCS_A > MCS_A[i]) minMCS_A = MCS_A[i];
+	}
+	for(int i=0; i<144; i++)
+	{
+		MCS_B[i] = rand()%12;
+		if(minMCS_B > MCS_B[i]) minMCS_B = MCS_B[i];
+	}
+	//minMCS_A = minMCS_B = 11;
 }
 
 void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool two_ch_mode,int Bandwidth,double alpha)//required data rate
 {
-	// ch = 0 <- A, 1 <- B, -1 <- dont care, ¥i¯à¦³¨â­ÓÀW¹Dªº¶Ç¿éÅv©Î¬O¥u¶]AÀW¹D¹êÅç(¤£¤¶·N¸Ë¸mÃş«¬) 
+	// ch = 0 <- A, 1 <- B, -1 <- dont care, å¯èƒ½æœ‰å…©å€‹é »é“çš„å‚³è¼¸æ¬Šæˆ–æ˜¯åªè·‘Aé »é“å¯¦é©—(ä¸ä»‹æ„è£ç½®é¡å‹) 
 	required_dr = 0.0;
 	cur_data_size = 0;
 	data_rate = 0.0;
 	int MAX_DR = -1;
-
 	
-	
-	if(Bandwidth == 148+74) MAX_DR = 3603;
-	else if(Bandwidth == 148) MAX_DR = 2402;
-	else MAX_DR = 1201;
+	//å‰äººè¨­å®š 
+//	if(Bandwidth == 148+74) MAX_DR = 3603;
+//	else if(Bandwidth == 148) MAX_DR = 2402;
+//	else MAX_DR = 1201;
+    if(Bandwidth == 148+74)	MAX_DR = 4*966*MCS_R[minMCS_B][0]*MCS_R[minMCS_B][1]/(12.8+0.8) + 2*966*MCS_R[minMCS_A][0]*MCS_R[minMCS_A][1]/(12.8+0.8);
+	else if(Bandwidth == 148) MAX_DR = (4*966)*MCS_R[minMCS_B][0]*MCS_R[minMCS_B][1]/(12.8+0.8);
+	else MAX_DR = (2*996)*MCS_R[minMCS_A][0]*MCS_R[minMCS_A][1]/(12.8+0.8);
 
 	if(device == "SL" && ch == 0){
 		return;
@@ -68,7 +83,7 @@ void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool two_ch_mode,int
 			else required_dr+= double(packets[i].packetSize);			
 			cur_data_size+=packets[i].packetSize;
 											
-			//³o¸Ì¤]³\­n¥h±¼·¥ºİ­È 
+			//é€™è£¡ä¹Ÿè¨±è¦å»æ‰æ¥µç«¯å€¼ 
 		}
 		else break;
 	}
@@ -82,7 +97,7 @@ void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool two_ch_mode,int
 		startIdxs[0] = startIdxs[1] = startIdx;
 	}
 	required_dr*=alpha;//alpha 
-	//cout << STA_ID<<" ©Ò»İ¸ê®Æ³t²v§ó·s§¹²¦ = "  << required_dr << endl; 
+	//cout << STA_ID<<" æ‰€éœ€è³‡æ–™é€Ÿç‡æ›´æ–°å®Œç•¢ = "  << required_dr << endl; 
 }
 
 void Station::updateExpired(int curTime)
@@ -93,7 +108,7 @@ void Station::updateExpired(int curTime)
 	while(packets.size() > startIdx)
 	{
 		if(curTime > packets[startIdx].deadline) {
-			//¦b³o¸Ì­pºâ¹L´Á«Ê¥] 
+			//åœ¨é€™è£¡è¨ˆç®—éæœŸå°åŒ… 
 			n_expired_packet+=1;
 			cur_expired_size+=packets[startIdx].packetSize;
 			startIdx+=1;
@@ -101,7 +116,7 @@ void Station::updateExpired(int curTime)
 		else break;		
 	}
 	
-	//cout << STA_ID << " ¹L´Á«Ê¥]§ó·s§¹²¦" << endl; 
+	//cout << STA_ID << " éæœŸå°åŒ…æ›´æ–°å®Œç•¢" << endl; 
 }
 void Station::updateRMRU(int curTime, int sim_time, double MaxDR, int Bandwidth)
 {
@@ -116,6 +131,5 @@ void Station::updateRMRU(int curTime, int sim_time, double MaxDR, int Bandwidth)
 		}
 	}
 }
-
 
 
