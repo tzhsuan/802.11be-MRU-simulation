@@ -17,7 +17,7 @@ AP::AP(int sim_time)
 //剩下NSTR裝置不能全雙工 
 void AP::updateSTAs(int curTime, int ch, bool isJoeFunc,bool two_ch_mode,int Bandwidth, double alpha) 
 {
-	for(int p = 0; p < 4; p++)
+	for(int p = 0; p < 5; p++)
 	{
 		for(int i = 0; i < station_list[p].size(); i++)
 		{
@@ -55,7 +55,7 @@ void AP::updateSTAs(int curTime, int ch, bool isJoeFunc,bool two_ch_mode,int Ban
 
 void AP::opt_updateSTAs(int curTime, int ch,int sim_time, int Bandwidth)
 {
-	for(int p = 0; p < 4; p++)
+	for(int p = 0; p < 5; p++)
 	{
 		for(int i = 0; i < station_list[p].size(); i++)
 		{
@@ -87,12 +87,24 @@ int AP::allocDR(bool two_ch_mode, int m, int p, int ch)
 		std::string sta, data_rate_idx;
 		std::getline(ss2, sta, ':');
 		std::getline(ss2, data_rate_idx, ':');
-		if(two_ch_mode) station_list[p][stoi(sta)].allocDRs[m][ch] = MRUs_dr[stoi(data_rate_idx)];
-		else station_list[p][stoi(sta)].data_rate = MRUs_dr[stoi(data_rate_idx)];
-		total_DR+=MRUs_dr[stoi(data_rate_idx)];
+//		if(two_ch_mode) station_list[p][stoi(sta)].allocDRs[m][ch] = MRUs_dr[stoi(data_rate_idx)];
+//		else station_list[p][stoi(sta)].data_rate = MRUs_dr[stoi(data_rate_idx)];
+		Station *STA = &station_list[p][stoi(sta)];
+		if(two_ch_mode)
+		{
+			if(ch == 0)	station_list[p][stoi(sta)].allocDRs[m][ch] = MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+			else station_list[p][stoi(sta)].allocDRs[m][ch] = MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+			total_DR+= station_list[p][stoi(sta)].allocDRs[m][ch];
+		} 
+		else
+		{
+			station_list[p][stoi(sta)].data_rate = MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+			total_DR+=station_list[p][stoi(sta)].data_rate;
+		} 
+		//total_DR+=MRUs_dr[stoi(data_rate_idx)];
 		count_26+=MRUsToIdx[MRUs[stoi(data_rate_idx)]];
 		int idx = stoi(data_rate_idx);
-		//cout << station_list[p][stoi(sta)].STA_ID<<" 使用26-tone 數量 = "  << MRUsToIdx[MRUs[idx]] << ", 換成MRU = "<< MRUs[idx] << ", 資料速率 = "<< MRUs_dr[stoi(data_rate_idx)] << endl; 
+		//cout << station_list[p][stoi(sta)].STA_ID<<" 使用26-tone 數量 = "  << MRUsToIdx[MRUs[idx]] << ", 換成MRU = "<< MRUs[idx] << ", 資料速率 = "<< MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8) << endl; 
 	}
 	//cout << "總資料速率 = " <<  total_DR << ", 使用了多少26-tone = "<<count_26 <<endl; 
 	return count_26;
@@ -131,7 +143,7 @@ void AP::cal_STAs_ana(int T, int sim_time)
 {
 	//計算出1 mus平均會有多少吞吐量 *10^6 => 即可推得平均每秒吞吐量 
 	double usedTDR = 0.0;
-	for(int p = 0; p < 4; p++)
+	for(int p = 0; p < 5; p++)
 	{
 		for(int i = 0; i < station_list[p].size(); i++)
 		{
@@ -193,6 +205,7 @@ void AP::cal_STAs_ana(int T, int sim_time)
 			STA->last_expired_size = STA->cur_expired_size;
 			
 			usedTDR+= STA->data_rate;
+			//cout << usedTDR << endl;
 		}
 	}
 	last_T = T;
@@ -203,7 +216,7 @@ int AP::find_avg_length(int curTime)//這裡有問題
 {
     double l = 0.0;
     int c = 0;
-    for(int p = 0; p < 4; p++)
+    for(int p = 0; p < 5; p++)
     {
     	for (int i = 0; i < station_list[p].size(); i++)
     	{
@@ -287,18 +300,18 @@ int AP::find_avg_len4MLO1(bool two_ch_mode,int curTime, int targetTime, int tole
 void AP::print_info()
 {
 	double sum_dr = 0.0;
-	//cout << "列印STAs資訊"<<endl; 
-	for(int p = 0; p < 4; p++)
+	cout << "列印STAs資訊"<<endl; 
+	for(int p = 0; p < 5; p++)
 	{
 		for(int i = 0; i <station_list[p].size(); i++)
 		{
 			Station* STA = &station_list[p][i];
-			//cout <<STA->STA_ID<<", "<<STA->allocDRs[0][0] << ", "<< STA->allocDRs[0][1] <<", "<<STA->allocDRs[1][0] << ", "<< STA->allocDRs[1][1]<< endl;
-			//cout << STA->STA_ID<<", "<<STA->data_rate << endl;
+			cout <<STA->STA_ID<<", "<<STA->allocDRs[0][0] << ", "<< STA->allocDRs[0][1] <<", "<<STA->allocDRs[1][0] << ", "<< STA->allocDRs[1][1]<< endl;
+			cout << STA->STA_ID<<", "<<STA->data_rate << endl;
 			sum_dr+=STA->data_rate;
 		}
 	}
-	//cout << "此次分配總共 DR = " << sum_dr << endl;
+	cout << "此次分配總共 DR = " << sum_dr << endl;
 }
  
 
@@ -321,7 +334,7 @@ int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, i
 	        {
 	        	 
 	        	double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;
-	        	double tmp_dr;
+	        	double tmp_dr = min(MRUs[c]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8), RD);
 	        	if (ch == 0){
 	        		double tmp_dr = min(MRUs[c]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8), RD);
 				}
@@ -352,6 +365,7 @@ int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, i
 	int remain_BW = two_ch_mode?Bandwidth - allocDR(true,m,p,ch):Bandwidth - allocDR(false,-1,p,-1); // allocDR那邊要將DR ASSIGN給 STA的allocDRs
 	//int remain_BW = Bandwidth - allocDR(false,-1,p,-1);
 	reOrderSTAs(p);
+	//cout <<"remain_BW = "<< remain_BW<<endl;
 	return remain_BW;
 }
 
@@ -375,9 +389,9 @@ double AP::getEDR4STA(double EDRch, double usedRD_A, double usedRD_B, double RD,
 
 void AP::twoChUsersAlloc()
 {
-	//建立2*4*2的vec，用於統計當前分配Data Rate;2 mlo, 4 pri, 2 ch
-	vector<vector<vector<double>>> usedRDs(2, vector<vector<double>>(4, vector<double>(2, 0.0)));
-	for(int p = 0; p < 4; p++)
+	//建立2*4*2的vec，用於統計當前分配Data Rate;2 mlo, 5 pri, 2 ch
+	vector<vector<vector<double>>> usedRDs(2, vector<vector<double>>(5, vector<double>(2, 0.0)));
+	for(int p = 0; p < 5; p++)
 	{
 		for(int i = 0; i < station_list[p].size(); i++)
 		{
@@ -492,7 +506,7 @@ int AP::knaspack_sra(int curTime, int Bandwidth, int p) //2d DP
 
 void AP::transmit2STAs(int curTime, int transTime)
 {
-	for(int p = 0; p < 4; p++)
+	for(int p = 0; p < 5; p++)
 	{
 		for (int i = 0; i < station_list[p].size(); i++)
 		{
@@ -534,7 +548,7 @@ void AP::transmit2STAs(int curTime, int transTime)
 void AP::sim_transmit2STAs(int curTime,int transTimeA, int transTimeB, int m)
 {
 	//dealy, success_trans_nth 改為根據m的1d vec 
-	for(int p = 0; p < 4; p++)
+	for(int p = 0; p < 5; p++)
 	{
 		for (int i = 0; i < station_list[p].size(); i++)
 		{
@@ -607,7 +621,7 @@ void AP::sim_transmit2STAs(int curTime,int transTimeA, int transTimeB, int m)
 double AP::evalEBR(int m, int transTimeA, int transTimeB)
 {
 	double avg_throughput = 0.0;
-	for(int p = 0; p < 4; p++)
+	for(int p = 0; p < 5; p++)
 	{	
 		for(int i = 0; i < station_list[p].size(); i++)
 		{
@@ -639,14 +653,14 @@ void AP::sortSTAs(int method)
 {
 	if(method == 0)
 	{
-		for(int p = 0; p < 4; p++)
+		for(int p = 0; p < 5; p++)
 		{
 			sort(station_list[p].begin(),station_list[p].end(),Station::compareBySTAID);
 		}
 	}
 	else if(method == 1)
 	{
-		for(int p = 0; p < 4; p++)
+		for(int p = 0; p < 5; p++)
 		{
 			sort(station_list[p].begin(),station_list[p].end(),Station::compareByRD);
 		}
@@ -656,7 +670,7 @@ void AP::sortSTAs(int method)
 //要寫個function alloc dr - rd 
 void AP::opt_filter()
 {
-	for(int p = 0; p < 4; p++)
+	for(int p = 0; p < 5; p++)
 	{
 		for (int i = 0; i < station_list[p].size(); i++)
 		{
@@ -671,7 +685,7 @@ void AP::opt_filter()
 int AP::opt_RCL(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)//two_ch指的是做雙頻道的實驗， two_ch_mode則是獲取同時兩個頻道 
 {
 	int ch = isCHA? 0:1;
-	for(int p = 0; p < 4; p++)
+	for(int p = 0; p < 5; p++)
 	{
 		for (int i = 0; i < station_list[p].size(); i++)
 		{
@@ -701,7 +715,7 @@ int AP::opt_RCL(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)//two_c
 int AP::opt_FGC(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)
 {
 	int ch = isCHA? 0:1;
-	for(int p = 0; p < 4; p++)
+	for(int p = 0; p < 5; p++)
 	{
 		//if(p==2) continue;
 		for (int i = 0; i < station_list[p].size(); i++)
