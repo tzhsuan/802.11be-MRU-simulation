@@ -78,7 +78,7 @@ void Scheduler::schedule_access(int method, double alpha)
 		if(method == 0)
 		{
 								
-			ap->updateSTAs(curTime4A,-1,true,false,BandwidthA,alpha);
+			ap->updateSTAs(curTime4A,-1,true,false,false,BandwidthA,alpha);
 			for(int p = 0; BandwidthA > 0 && p < 5; p++)
 			{
 				BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,false,-1,p,-1);
@@ -90,19 +90,19 @@ void Scheduler::schedule_access(int method, double alpha)
 		}
 		else if(method == 1)
 		{
-			ap->updateSTAs(curTime4A,-1,false,false,BandwidthA,1.0);
+			ap->updateSTAs(curTime4A,-1,false,false,false,BandwidthA,1.0);
 			ap->sortSTAs(1);
 			BandwidthA = ap->opt_RCL(BandwidthA,true,false,false);	// 
 			BandwidthA = ap->opt_FGC(BandwidthA,true,false,false);
 			//cout << "剩餘頻寬 = " <<  BandwidthA << endl; 
 			//ap->print_info();
 		}
-		else if(method == 2)
+		else if(method == 2) //Tzu method
 		{
-			ap->updateSTAs(curTime4A,-1,false,false,BandwidthA,1.0);
-			ap->sortSTAs(1);
-			BandwidthA = ap->opt_RCL(BandwidthA,true,false,false);	// 
-			BandwidthA = ap->opt_FGC(BandwidthA,true,false,false);
+			ap->updateSTAs(curTime4A,-1,false,true,false,BandwidthA,1.0);
+			//ap->sortSTAs(2);
+
+
 			//cout << "剩餘頻寬 = " <<  BandwidthA << endl; 
 			//ap->print_info();
 		}
@@ -154,7 +154,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			//if my func
 			if(method == 3)
 			{
-				ap->updateSTAs(curTime4A,-1,true,true,BandwidthA+BandwidthB,alpha);
+				ap->updateSTAs(curTime4A,-1,true,false,true,BandwidthA+BandwidthB,alpha);
 				ap->twoChUsersAlloc();
 				
 				for(int p = 0; BandwidthA > 0 && p < 5; p++)
@@ -179,7 +179,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			}
 			else if(method == 4)
 			{
-				ap->updateSTAs(curTime4A,-1,false,true,BandwidthA,1.0);
+				ap->updateSTAs(curTime4A,-1,false,false,true,BandwidthA,1.0);
 				ap->sortSTAs(1);
 				BandwidthA = ap->opt_RCL(BandwidthA,true,true,true);
 				BandwidthA = ap->opt_FGC(BandwidthA,true,true,true);
@@ -276,7 +276,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			}
 			int transTime = 0;
 			if(method == 3){
-				ap->updateSTAs(Time,ch,true,false,Bandwidth,alpha);		
+				ap->updateSTAs(Time,ch,true,false,false,Bandwidth,alpha);		
 				for(int p = 0; Bandwidth > 0 && p < 5; p++)
 				{
 					Bandwidth = ap->knaspack_sra(Time,Bandwidth,false,-1,p,-1);
@@ -284,8 +284,8 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 				
 				transTime = ap->find_avg_len4MLO1(false,Time, Time2 - SIFS*2 - ACK , 5000,-1);
 			}
-			else{
-				ap->updateSTAs(curTime4A,-1,false,false,Bandwidth,1.0);
+			else if(method == 4){
+				ap->updateSTAs(curTime4A,-1,false,false,false,Bandwidth,1.0);
 				ap->sortSTAs(1);
 				Bandwidth = ap->opt_RCL(Bandwidth,ch == 0,false,true);	//決定分配大小 
 				Bandwidth = ap->opt_FGC(Bandwidth,ch == 0,false,true);	//決定分配速率 
