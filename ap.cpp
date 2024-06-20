@@ -15,7 +15,7 @@ AP::AP(int sim_time)
 	
 }
 //剩下NSTR裝置不能全雙工 
-void AP::updateSTAs(int curTime, int ch, bool isJoeFunc,bool two_ch_mode,int Bandwidth, double alpha) 
+void AP::updateSTAs(int curTime, int ch, bool isJoeFunc, bool isTzuFunc,bool two_ch_mode,int Bandwidth, double alpha) 
 {
 	for(int p = 0; p < 5; p++)
 	{
@@ -33,8 +33,8 @@ void AP::updateSTAs(int curTime, int ch, bool isJoeFunc,bool two_ch_mode,int Ban
 				STA->delays = {0.0,0.0};
 				STA->cur_data_sizes = {0,0};
 			}
-			STA->updateRD(curTime,ch,isJoeFunc,two_ch_mode,Bandwidth,alpha);
-			if(!isJoeFunc){
+			STA->updateRD(curTime,ch,isJoeFunc,isTzuFunc,two_ch_mode,Bandwidth,alpha);
+			if(!isJoeFunc && !isTzuFunc){
 				int MAX_DR = -1;
 //				if(Bandwidth == 148+74) MAX_DR = 3603;
 //				else if(Bandwidth == 148) MAX_DR = 2402;
@@ -61,7 +61,7 @@ void AP::opt_updateSTAs(int curTime, int ch,int sim_time, int Bandwidth)
 		{
 			Station *STA = &station_list[p][i];
 			STA->updateExpired(curTime);
-			STA->updateRD(curTime,ch,false,false,Bandwidth,1.0);
+			STA->updateRD(curTime,ch,false,false,false,Bandwidth,1.0);
 			int MAX_DR = -1;
 //			if(Bandwidth == 148+74) MAX_DR = 3603;
 //			else if(Bandwidth == 148) MAX_DR = 2402;
@@ -651,7 +651,7 @@ void AP::reOrderSTAs(int p)
 
 void AP::sortSTAs(int method)
 {
-	if(method == 0)
+	if(method == 0 || method == 2)
 	{
 		for(int p = 0; p < 5; p++)
 		{
