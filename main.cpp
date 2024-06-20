@@ -9,10 +9,10 @@ int D = 5;
 int MILLION = 1000000;
 int T = 1; //原測資為5 
 const vector<double> SL_STR_NSTR_RATIO = {0.2,0.4,0.4}; 
-const vector<int> PRI_PEOPLE = vector<int>{5,5,5,5,5};// 4*7的情況下 頻寬3600 ARR = 4060 會得到  3220  //更動為5個 
+const vector<int> PRI_PEOPLE = vector<int>{1,5,5,5,5};// 4*7的情況下 頻寬3600 ARR = 4060 會得到  3220  //更動為5個 
 const vector<int> TRAFFIC_ARRIVAL_RATES = vector<int>{20,20,160,300,100};// Mbit 20 160 300 100 => 2250  //更動為五個 
 const vector<int> MPDU_LENS = vector<int>{800,200,1000,500,500}; //Byte  //更動為五個  
-const vector<int> DEADLINES = vector<int>{50000,150000,200000,1000000,2000000}; // mus => 46.72w mus  //更動為五個  (5ms check)
+const vector<int> DEADLINES = vector<int>{5000,150000,200000,1000000,2000000}; // mus => 46.72w mus  //更動為五個  (5ms check)
 const vector<string> Method_NAME = {"Joe_1CH_","Opt_1CH_","Tzu_1CH_","Joe_2CH_","Opt_2CH_","Tzu_2CH_"};   
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 
@@ -63,7 +63,7 @@ int main(int argc, char** argv) {
 	//vector<vector<double>> alpha_TH(20,vector<double>(4,0.0));
 	//vector<vector<double>> alpha_D(20,vector<double>(4,0.0));
 	
-	vector<int> VAR_PRI_PEOPLE = vector<int>{5,5,5,5,5};
+	vector<int> VAR_PRI_PEOPLE = vector<int>{1,5,5,5,5};
 	//vector<int> VAR_TRAFFIC_ARRIVAL_RATES = vector<int>{10,80,150,50};
 	
 	int initPN = 4;
