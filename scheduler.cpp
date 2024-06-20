@@ -79,16 +79,25 @@ void Scheduler::schedule_access(int method, double alpha)
 		{
 								
 			ap->updateSTAs(curTime4A,-1,true,false,BandwidthA,alpha);
-			for(int p = 0; BandwidthA > 0 && p < 4; p++)
+			for(int p = 0; BandwidthA > 0 && p < 5; p++)
 			{
 				BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,false,-1,p,-1);
-				//cout <<"優先級別 "<< 4-p<<"使用後剩餘頻寬 = " <<  BandwidthA << endl;
+				//cout <<"優先級別 "<< 5-p<<"使用後剩餘頻寬 = " <<  BandwidthA << endl;
 			}
 			//ap->print_info();
 			//cout << "剩餘頻寬 = " <<  BandwidthA << endl;
 
 		}
 		else if(method == 1)
+		{
+			ap->updateSTAs(curTime4A,-1,false,false,BandwidthA,1.0);
+			ap->sortSTAs(1);
+			BandwidthA = ap->opt_RCL(BandwidthA,true,false,false);	// 
+			BandwidthA = ap->opt_FGC(BandwidthA,true,false,false);
+			//cout << "剩餘頻寬 = " <<  BandwidthA << endl; 
+			//ap->print_info();
+		}
+		else if(method == 2)
 		{
 			ap->updateSTAs(curTime4A,-1,false,false,BandwidthA,1.0);
 			ap->sortSTAs(1);
@@ -143,32 +152,32 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			int BandwidthA = ap->Bandwidth_A_26, BandwidthB = ap->Bandwidth_B_26;
 			int mlo0_trans_time = 0;
 			//if my func
-			if(method == 2)
+			if(method == 3)
 			{
 				ap->updateSTAs(curTime4A,-1,true,true,BandwidthA+BandwidthB,alpha);
 				ap->twoChUsersAlloc();
 				
-				for(int p = 0; BandwidthA > 0 && p < 4; p++)
+				for(int p = 0; BandwidthA > 0 && p < 5; p++)
 				{
 					BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,true,0,p,0);
 				}
-				for(int p = 0; BandwidthB > 0 && p < 4; p++)
+				for(int p = 0; BandwidthB > 0 && p < 5; p++)
 				{
 					BandwidthB = ap->knaspack_sra(curTime4B,BandwidthB,true,0,p,1);
 				}
 				
 				BandwidthA = ap->Bandwidth_A_26, BandwidthB = ap->Bandwidth_B_26;
-				for(int p = 0; BandwidthA > 0 && p < 4; p++)
+				for(int p = 0; BandwidthA > 0 && p < 5; p++)
 				{
 					BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,true,1,p,0);
 				}
-				for(int p = 0; BandwidthB > 0 && p < 4; p++)
+				for(int p = 0; BandwidthB > 0 && p < 5; p++)
 				{
 					BandwidthB = ap->knaspack_sra(curTime4B,BandwidthB,true,1,p,1);
 				}
 				mlo0_trans_time = ap->find_avg_len4MLO0(curTime4A);	
 			}
-			else if(method == 3)
+			else if(method == 4)
 			{
 				ap->updateSTAs(curTime4A,-1,false,true,BandwidthA,1.0);
 				ap->sortSTAs(1);
@@ -186,10 +195,10 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			int mlo1_trans_timeA = ap->find_avg_len4MLO1(true,curTime4A,-1,-1,0);
 			int mlo1_trans_timeB = ap->find_avg_len4MLO1(true,curTime4B,-1,-1,1);
 			
-			if(method == 2) ap->sim_transmit2STAs(curTime4A,mlo0_trans_time,mlo0_trans_time,0);
+			if(method == 3) ap->sim_transmit2STAs(curTime4A,mlo0_trans_time,mlo0_trans_time,0);
 			ap->sim_transmit2STAs(curTime4B,mlo1_trans_timeA,mlo1_trans_timeB,1);
 			
-			double ebr_mlo0 = method == 2?ap->evalEBR(0,mlo0_trans_time,mlo0_trans_time):-1;
+			double ebr_mlo0 = method == 3?ap->evalEBR(0,mlo0_trans_time,mlo0_trans_time):-1;
 			double ebr_mlo1 = ap->evalEBR(1,mlo1_trans_timeA,mlo1_trans_timeB);
 			//cout << "EBR MLO 0 = " << ebr_mlo0 <<", EBR MLO 1 = "<<ebr_mlo1<<endl;
 			int durationA = SIFS + 0 + SIFS + ACK;
@@ -211,7 +220,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			int tA =  durationA - 2 * SIFS - ACK;
 			int tB = durationB - 2 * SIFS - ACK;
 			// 指派success trans, start idx, delay
-			for(int p = 0; p < 4; p++)
+			for(int p = 0; p < 5; p++)
 			{
 				for(int i = 0; i < ap->station_list[p].size(); i++)
 				{
@@ -266,9 +275,9 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 				ch = 1;
 			}
 			int transTime = 0;
-			if(method == 2){
+			if(method == 3){
 				ap->updateSTAs(Time,ch,true,false,Bandwidth,alpha);		
-				for(int p = 0; Bandwidth > 0 && p < 4; p++)
+				for(int p = 0; Bandwidth > 0 && p < 5; p++)
 				{
 					Bandwidth = ap->knaspack_sra(Time,Bandwidth,false,-1,p,-1);
 				}
@@ -286,7 +295,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			ap->transmit2STAs(Time,transTime);
 			int duration = SIFS + transTime + SIFS + ACK;
 			
-			for(int p = 0; p < 4; p++)
+			for(int p = 0; p < 5; p++)
 			{
 				for(int i = 0; i < ap->station_list[p].size(); i++)
 				{
