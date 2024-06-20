@@ -78,7 +78,7 @@ public:
 	
 	Station(string,int,int,int,int);
 	Station();
-	void updateRD(int,int,bool,bool,int,double);
+	void updateRD(int,int,bool,bool,bool,int,double);
 	void updateExpired(int);
 	void transmit(int);//int duration
 	
