@@ -33,10 +33,10 @@ Station::Station(string device, int STA_ID,int priority, int sim_time, int packe
 		MCS_B[i] = rand()%12;
 		if(minMCS_B > MCS_B[i]) minMCS_B = MCS_B[i];
 	}
-	//minMCS_A = minMCS_B = 11;
+	minMCS_A = minMCS_B = 11;
 }
 
-void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool two_ch_mode,int Bandwidth,double alpha)//required data rate
+void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool isTzuFunc, bool two_ch_mode,int Bandwidth,double alpha)//required data rate
 {
 	// ch = 0 <- A, 1 <- B, -1 <- dont care, 可能有兩個頻道的傳輸權或是只跑A頻道實驗(不介意裝置類型) 
 	required_dr = 0.0;
@@ -80,6 +80,20 @@ void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool two_ch_mode,int
 				}
 				
 			}
+			else if(isTzuFunc)
+			{
+				if(Bandwidth == 148+74) MAX_DR = 3603;
+				else if(Bandwidth == 148) MAX_DR = 2402;
+				else MAX_DR = 1201;
+				
+				double tmp = double(packets[i].packetSize)/(min(sim_time,packets[i].deadline) - curTime);
+				if(!isinf(tmp) && tmp > 0 && tmp < MAX_DR) required_dr+=tmp;
+				else{
+					//startIdx+=1;
+					continue;
+				}
+				
+			}	
 			else required_dr+= double(packets[i].packetSize);			
 			cur_data_size+=packets[i].packetSize;
 											
@@ -87,7 +101,7 @@ void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool two_ch_mode,int
 		}
 		else break;
 	}
-	if(!isJoeFunc){
+	if(!isJoeFunc && !isTzuFunc){
 		required_dr/= double(sim_time)-curTime;
 	}
 	if(two_ch_mode)
@@ -96,7 +110,8 @@ void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool two_ch_mode,int
 		cur_data_sizes[0] = cur_data_sizes[1] = cur_data_size;
 		startIdxs[0] = startIdxs[1] = startIdx;
 	}
-	required_dr*=alpha;//alpha 
+	if(!isTzuFunc) required_dr*=alpha;//alpha 
+	
 	//cout << STA_ID<<" 所需資料速率更新完畢 = "  << required_dr << endl; 
 }
 
