@@ -101,9 +101,14 @@ void Scheduler::schedule_access(int method, double alpha)
 		{
 			ap->updateSTAs(curTime4A,-1,false,true,false,BandwidthA,1.0);
 			//ap->sortSTAs(2);
+			int RemainRU_A = ap->remainRU_A[0];
+			for(int p = 0; RemainRU_A > 0 && p < 5; p++)
+			{
+				RemainRU_A = ap->Tzu(curTime4A,RemainRU_A,false,-1,p,-1);
+				//cout <<"優先級別 "<< 5-p<<"使用後剩餘頻寬 = " <<  BandwidthA << endl;
+			}
 
-
-			//cout << "剩餘頻寬 = " <<  BandwidthA << endl; 
+			//cout << "剩餘頻寬 = " <<  RemainRU_A << endl; 
 			//ap->print_info();
 		}
 		transTime = ap->find_avg_length(curTime4A);//
