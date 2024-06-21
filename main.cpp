@@ -51,7 +51,7 @@ vector<double> get_anaErrRate(vector<vector<double>> THs,vector<vector<double>> 
 
 
 int main(int argc, char** argv) {
-	int Method = 3;  //自己調整方法 
+	int Method = 1;  //自己調整方法 
 	double alpha = 2.75;  //冠霖參數設置 2.75 
 	double sim_time = MILLION * D;
 	
