@@ -64,6 +64,8 @@ void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool isTzuFunc, bool
 			return;
 		}
 	}
+	is_timecritical = false;
+	
 	for(int i = startIdx; i < packets.size(); i++)
 	{
 		//packets[i].canTrans = false;
@@ -82,9 +84,14 @@ void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool isTzuFunc, bool
 			}
 			else if(isTzuFunc)
 			{
-				if(Bandwidth == 148+74) MAX_DR = 3603;
-				else if(Bandwidth == 148) MAX_DR = 2402;
-				else MAX_DR = 1201;
+				if(Bandwidth == 148+74) MAX_DR = 4*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8) + 2*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8);
+				else if(Bandwidth == 148) MAX_DR = 4*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8);
+				else MAX_DR = 2*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8);
+				
+				if (sim_time > packets[i].deadline)
+				{
+					is_timecritical = true;
+				}
 				
 				double tmp = double(packets[i].packetSize)/(min(sim_time,packets[i].deadline) - curTime);
 				if(!isinf(tmp) && tmp > 0 && tmp < MAX_DR) required_dr+=tmp;
