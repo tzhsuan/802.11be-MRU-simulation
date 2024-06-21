@@ -369,7 +369,46 @@ int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, i
 	return remain_BW;
 }
 
-
+int AP::Tzu(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
+{
+	//vector<int> time_critical;
+	for (int i = 1; i <= station_list[p].size(); i++)
+	{
+		Station *STA = &station_list[p][i-1];
+		if(STA->is_timecritical == true)
+		{
+			//time_critical.push_back(i-1);
+			if(two_ch_mode && STA->requiredDRs[m][ch] == 0.0) continue;
+	    	if(!two_ch_mode && STA->required_dr == 0.0) continue;
+	    	
+			int MRUtype = 1; 
+			double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;
+			for (MRUtype = 1; MRUtype < 16; MRUtype++)
+			{
+				if(RD <= MRUs_dr[MRUtype]) break;
+				
+			}
+			for (int j = MRUtype; j < 16; j++)
+			{
+//				for (int m = 0; m < MRUtable[m].size(); m++)
+//				{
+//					
+//				
+//				}
+				
+			}
+		}
+		
+	}
+	
+//	alloc_result = dp[Bandwidth].second;
+//	//cout <<"排程結果 = "<< alloc_result<<endl;
+//	int remain_BW = two_ch_mode?Bandwidth - allocDR(true,m,p,ch):Bandwidth - allocDR(false,-1,p,-1); // allocDR那邊要將DR ASSIGN給 STA的allocDRs
+//	//int remain_BW = Bandwidth - allocDR(false,-1,p,-1);
+//	reOrderSTAs(p);
+//	//cout <<"remain_BW = "<< remain_BW<<endl;
+//	return remain_BW;
+}
 double AP::d_min(double a, double b) {
     if (std::abs(a - b) < 1e-9) {
         return a < b ? a : b;
