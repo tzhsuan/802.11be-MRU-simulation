@@ -17,6 +17,8 @@ public:
 	double n_suc_packet_chA = 0.0;
 	double n_suc_packet_chB = 0.0;
 	
+	bool is_timecritical;
+	
 	vector<vector<double>> requiredDRs = {{0.0,0.0},{0.0,0.0}};//(2,vector<double> (2,0.0))
 	vector<vector<double>> allocDRs = {{0.0,0.0},{0.0,0.0}};
 	
@@ -34,6 +36,10 @@ public:
 	int minMCS_A = 12; //大於11 index 
 	int minMCS_B = 12; //大於11 index 
 	double MCS_R[12][2] = {{0.5,1.0},{0.5,2.0},{0.75,2.0},{0.5,4.0},{0.75,4.0},{0.67,6.0},{0.75,6.0},{0.83,6.0},{0.75,8.0},{0.83,8.0},{0.75,10.0},{0.83,10.0}};
+	int MRUtype_A;
+	int MRUindex_A;
+	int MRUtype_B;
+	int MRUindex_B;	
 	
 	string device;//STR NSTR SL
 	double required_dr_A = 0.0;
