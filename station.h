@@ -32,7 +32,7 @@ public:
 	vector<int> last_packet_sizes = {0,0};
 	
 	int MCS_A[144] = {0}; //MCS_A index
-	int MCS_B[144] = {0}; //MCS_B index
+	int MCS_B[72] = {0}; //MCS_B index
 	int minMCS_A = 12; //大於11 index 
 	int minMCS_B = 12; //大於11 index 
 	double MCS_R[12][2] = {{0.5,1.0},{0.5,2.0},{0.75,2.0},{0.5,4.0},{0.75,4.0},{0.67,6.0},{0.75,6.0},{0.83,6.0},{0.75,8.0},{0.83,8.0},{0.75,10.0},{0.83,10.0}};
