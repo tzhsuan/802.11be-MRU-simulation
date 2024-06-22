@@ -39,9 +39,9 @@ void AP::updateSTAs(int curTime, int ch, bool isJoeFunc, bool isTzuFunc,bool two
 //				if(Bandwidth == 148+74) MAX_DR = 3603;
 //				else if(Bandwidth == 148) MAX_DR = 2402;
 //				else MAX_DR = 1201;
-    			if(Bandwidth == 148+74)	MAX_DR = 4*966*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8) + 2*966*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
-				else if(Bandwidth == 148) MAX_DR = (4*966)*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
-				else MAX_DR = (2*996)*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+    			if(Bandwidth == 148+74)	MAX_DR = 4*966*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8) + 2*966*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+				else if(Bandwidth == 148) MAX_DR = (4*966)*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+				else MAX_DR = (2*996)*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
 				STA->updateRMRU(curTime,sim_time,MAX_DR,Bandwidth);
 			}
 			
@@ -66,9 +66,9 @@ void AP::opt_updateSTAs(int curTime, int ch,int sim_time, int Bandwidth)
 //			if(Bandwidth == 148+74) MAX_DR = 3603;
 //			else if(Bandwidth == 148) MAX_DR = 2402;
 //			else MAX_DR = 1201;
-            if(Bandwidth == 148+74)	MAX_DR = 4*966*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8) + 2*966*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
-			else if(Bandwidth == 148) MAX_DR = (4*966)*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
-			else MAX_DR = (2*996)*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+            if(Bandwidth == 148+74)	MAX_DR = 4*966*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8) + 2*966*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+			else if(Bandwidth == 148) MAX_DR = (4*966)*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+			else MAX_DR = (2*996)*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
 			STA->updateRMRU(curTime,sim_time,MAX_DR,Bandwidth);
 			//cout << STA->STA_ID<<"需要"<<MRUs[STA->MRU_idx]<<"-tone MRU" << endl; 
 		}
@@ -98,13 +98,13 @@ int AP::allocDR(bool two_ch_mode, int m, int p, int ch)
 		} 
 		else
 		{
-			station_list[p][stoi(sta)].data_rate = MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+			station_list[p][stoi(sta)].data_rate = MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
 			total_DR+=station_list[p][stoi(sta)].data_rate;
 		} 
 		//total_DR+=MRUs_dr[stoi(data_rate_idx)];
 		count_26+=MRUsToIdx[MRUs[stoi(data_rate_idx)]];
 		int idx = stoi(data_rate_idx);
-		//cout << station_list[p][stoi(sta)].STA_ID<<" 使用26-tone 數量 = "  << MRUsToIdx[MRUs[idx]] << ", 換成MRU = "<< MRUs[idx] << ", 資料速率 = "<< MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8) << endl; 
+		//cout << station_list[p][stoi(sta)].STA_ID<<" 使用26-tone 數量 = "  << MRUsToIdx[MRUs[idx]] << ", 換成MRU = "<< MRUs[idx] << ", 資料速率 = "<< MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8) << endl; 
 	}
 	//cout << "總資料速率 = " <<  total_DR << ", 使用了多少26-tone = "<<count_26 <<endl; 
 	return count_26;
@@ -334,7 +334,7 @@ int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, i
 	        {
 	        	 
 	        	double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;
-	        	double tmp_dr = min(MRUs[c]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8), RD);
+	        	double tmp_dr = min(MRUs[c]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8), RD);
 	        	if (ch == 0){
 	        		double tmp_dr = min(MRUs[c]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8), RD);
 				}
@@ -369,9 +369,141 @@ int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, i
 	return remain_BW;
 }
 
+void appendVector(std::vector<int>& target, std::vector<int>& source) {
+  target.insert(target.end(), source.begin(), source.end());
+}
+
+vector<int>& AP::MRU_map_26(int MRUtype, int location) {
+	vector<int> map_26;
+	vector<int> arr1;
+	vector<int> arr2;
+	vector<int> arr3;
+	switch (MRUtype) {
+  		case 1: //26
+			map_26.push_back(location);
+    	    break;
+  		case 2: //52
+    		if (location %4 >1)
+    		{
+    			location = location/4*9+location %4*2+1;
+    			map_26.push_back(location);
+    			map_26.push_back(location+1);
+			}
+			else
+			{
+				location = location/4*9+location %4*2;
+				map_26.push_back(location);
+    			map_26.push_back(location+1);
+			}
+    		break;
+  		case 3: //52+26
+  			map_26 = MRU_map_26(2, MRUtable_52_26[location][0]);
+  			arr1 = MRU_map_26(1, MRUtable_52_26[location][1]);
+  			appendVector(map_26,arr1);
+    		break;
+   		case 4: //106
+    		if (location %2 >0)
+    		{
+    			location = location/2*9+location%2*4+1;
+				for(int i=0;i<4;i++) map_26.push_back(location+i);
+			}
+			else
+			{
+    			location = location/2*9+location%2*4;
+				for(int i=0;i<4;i++) map_26.push_back(location+i);
+			}
+    		break;
+  		case 5: //106+26
+  			map_26 = MRU_map_26(4,MRUtable_106_26[location][0]);
+  			arr1 = MRU_map_26(1,MRUtable_106_26[location][1]);
+  			appendVector(map_26,arr1);	
+		    break;	
+  		case 6: //242
+            location = location*9;
+            for(int i=0;i<9;i++) map_26.push_back(location+i);
+		    break;		
+  		case 7: //484
+            location = location*18;
+            for(int i=0;i<18;i++) map_26.push_back(location+i);
+		    break;		
+  		case 8: //484+242
+  			map_26 = MRU_map_26(7,MRUtable_484_242[location][0]);
+  			arr1 = MRU_map_26(6,MRUtable_484_242[location][1]);
+  			appendVector(map_26,arr1);	
+		    break;		
+  		case 9: //996
+            location = location*36;
+            for(int i=0;i<36;i++) map_26.push_back(location+i);
+		    break;	
+  		case 10: //996+484
+  			map_26 = MRU_map_26(9,MRUtable_996_484[location][0]);
+  			arr1 = MRU_map_26(7,MRUtable_996_484[location][1]);
+  			appendVector(map_26,arr1);	
+			break;	
+  		case 11: //2*996
+            location = location*72;
+            for(int i=0;i<72;i++) map_26.push_back(location+i);
+		    break;		
+  		case 12: //2*996+484
+  			map_26 = MRU_map_26(9,MRUtable_2_996_484[location][0]);
+  			arr1 = MRU_map_26(9,MRUtable_2_996_484[location][1]);
+  			arr2 = MRU_map_26(7,MRUtable_2_996_484[location][2]);
+  			appendVector(map_26,arr1);		
+			appendVector(map_26,arr2);			
+			break;
+	    case 13: //3*996
+  			map_26 = MRU_map_26(9,MRUtable_3_996[location][0]);
+  			arr1 = MRU_map_26(9,MRUtable_3_996[location][1]);
+  			arr2 = MRU_map_26(9,MRUtable_3_996[location][2]);
+  			appendVector(map_26,arr1);		
+			appendVector(map_26,arr2);			
+			break;		
+	    case 14: //3*996+484
+  			map_26 = MRU_map_26(9,MRUtable_3_996_484[location][0]);
+  			arr1 = MRU_map_26(9,MRUtable_3_996_484[location][1]);
+  			arr2 = MRU_map_26(9,MRUtable_3_996_484[location][2]);
+  			arr3 = MRU_map_26(9,MRUtable_3_996_484[location][3]);
+  			appendVector(map_26,arr1);		
+			appendVector(map_26,arr2);	
+			appendVector(map_26,arr3);			
+			break;		
+  		case 15: //4*996
+            location = location*144;
+            for(int i=0;i<144;i++) map_26.push_back(location+i);
+		    break;								   		
+  			default:
+   			// Code to execute if expression doesn't match any case
+    	break;
+	}
+  return map_26;
+}
+
+void AP::renew_allocation_table(int ch, int MRUtype, vector<int> map_26)
+{
+	for (int i=0;i<map_26.size();i++)
+	{
+		allocation_table[0][map_26[i]] = 1; //26
+		if(map_26[i]%9<4) allocation_table[1][(map_26[i] - map_26[i]/9)/2] = 1; //52
+		else if(map_26[i]%9>4) allocation_table[1][(map_26[i] - map_26[i]/9 -1)/2] = 1;
+		
+		if(map_26[i]%9<4) allocation_table[3][(map_26[i] - map_26[i]/9)/4] = 1; //106
+		else if(map_26[i]%9>4) allocation_table[3][(map_26[i] - map_26[i]/9 -1)/4] = 1;
+		
+		allocation_table[5][map_26[i]/9] = 1; //242
+		allocation_table[6][map_26[i]/18] = 1; //484
+		allocation_table[8][map_26[i]/36] = 1; //996
+	}
+}
 int AP::Tzu(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
 {
 	//vector<int> time_critical;
+	if(ch == 1)	vector<vector<int>> allocation_table(11);
+	else vector<vector<int>> allocation_table(15);
+	for(int i = 0; i < allocation_table.size();i++)
+	{
+			if (ch == 1) allocation_table[i] = vector<int>(remainRU_B[i],0);
+			else allocation_table[i] = vector<int>(remainRU_A[i],0);
+	}
 	for (int i = 1; i <= station_list[p].size(); i++)
 	{
 		Station *STA = &station_list[p][i-1];
@@ -381,24 +513,50 @@ int AP::Tzu(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
 			if(two_ch_mode && STA->requiredDRs[m][ch] == 0.0) continue;
 	    	if(!two_ch_mode && STA->required_dr == 0.0) continue;
 	    	
-			int MRUtype = 1; 
+			int MRUtype = 0; 
 			double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;
-			for (MRUtype = 1; MRUtype < 16; MRUtype++)
-			{
-				if(RD <= MRUs_dr[MRUtype]) break;
-				
-			}
-			for (int j = MRUtype; j < 16; j++)
-			{
-//				for (int m = 0; m < MRUtable[m].size(); m++)
-//				{
-//					
-//				
-//				}
-				
-			}
+				for (MRUtype = 0; MRUtype < allocation_table.size(); MRUtype++)
+				{
+					if(RD <= MRUs_dr[MRUtype+1]) break;
+				}
+				for (int j = MRUtype; j < allocation_table.size(); j++)
+				{
+					
+					for	 (int l = 0;l < allocation_table[j].size(); l++)
+					{
+						if (allocation_table[j][l] == 1) continue;
+  						double En = 0.0; 
+  						int min_mcs = 12;
+  						vector<int> map_26;
+						map_26 = MRU_map_26(j,l);
+  						for(int index = 0; index < map_26.size();index++)
+  						{
+  							if (ch ==1) if(min_mcs > STA->MCS_B[index]) min_mcs = STA->MCS_B[index];	  
+  							else if(min_mcs > STA->MCS_A[index]) min_mcs = STA->MCS_A[index];	  
+						}
+						En = MRUs[j+1]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8);	
+						if (En >= RD)
+						{
+							//station_list[p][i-1].allocDRs[m][ch] = min(RD,En);
+							if(two_ch_mode)
+							{
+								if(ch == 0)	station_list[p][i-1].allocDRs[m][ch] =  min(RD,En);
+								else station_list[p][i-1].allocDRs[m][ch] =  min(RD,En);
+								//total_DR+= station_list[p][i-1].allocDRs[m][ch];
+							} 
+							else
+							{
+								station_list[p][i-1].data_rate = min(RD,En);
+								//total_DR+=station_list[p][i-1].data_rate;
+							}					
+							renew_allocation_table(ch,j,map_26);
+						} 
+					}
+				}
 		}
-		
+			
+
+
 	}
 	
 //	alloc_result = dp[Bandwidth].second;
