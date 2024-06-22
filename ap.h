@@ -19,6 +19,7 @@ public:
 	//guard intervals is 0.8μs
 	vector<int> traffic_arrival_rates;
 	vector<vector<Station>> station_list;
+	vector<vector<int>> allocation_table;
 	
 	const int OFDMA_DURATION = 32768;
 	const int Bandwidth_A_26 = 148;//320 MHz 148 
@@ -40,7 +41,7 @@ public:
 	int last2_T = 0;
 	
 	
-	int remainRU_B[15] = {72,32,16,16,8,8,4,8,2,4,1,0,0,0,0};	
+	int remainRU_B[11] = {72,32,16,16,8,8,4,8,2,4,1};	
     int remainRU_A[15] = {144,64,32,32,16,16,8,16,4,8,2,12,4,8,1};
 	int allocatin_table_B[72] ={0};
 	int allocatin_table_A[144] ={0};  
@@ -52,6 +53,8 @@ public:
 	//int knaspack_sra(int,int,int);
 	int knaspack_sra(int,int,bool,int,int,int);
 	int Tzu(int,int,bool,int,int,int);
+	vector<int> &MRU_map_26(int,int);
+	void renew_allocation_table(int,int,vector<int>);
 	int allocDR(bool,int,int,int);
 	int find_avg_length(int);
 	int find_avg_len4MLO0(int);
@@ -100,15 +103,45 @@ private:
     const int MRUtable_2_996_484[12][3] = {{1,2,1},{1,2,0},{0,2,3},{0,2,2},{0,1,5},{0,1,4},{2,3,3},{2,3,2},{1,3,5},{1,3,4},{1,2,7},{1,2,6}};
     const int MRUtable_3_996[4][3] = {{1,2,3},{0,2,3},{0,1,3},{0,1,2}}; 
     const int MRUtable_3_996_484[8][4] = {{1,2,3,1},{1,2,3,0},{0,2,3,3},{0,2,3,2},{0,1,3,5},{0,1,3,4},{0,1,2,7},{0,1,2,6}}; 
-    
 	
 	void reOrderSTAs(int);
 	double d_min(double,double);
 	double getEDR4STA(double,double,double,double,double);
 	
-	const vector<int> MPDU_LENS = vector<int>{800*8,200*8,1000*8,500*8,500*8}; //Byte
-	
-	
+	const vector<int> MPDU_LENS = vector<int>{500*8,200*8,1000*8,500*8,500*8}; //Byte
+//	struct allocation_table
+//	{
+//		int MRU_26_A[144] = {0}; 
+//		int MRU_52_A[64] = {0};
+//		int MRU_52_26_A[32] = {0};
+//		int MRU_106_A[32] = {0};
+//		int MRU_106_26_A[16] = {0};
+//		int MRU_242_A[16] = {0};
+//		int MRU_484_A[8] = {0};
+//		int MRU_484_242_A[16] = {0};
+//		int MRU_996_A[4] = {0};
+//		int MRU_996_484_A[8] = {0};
+//		int MRU_2_996_A[2] = {0};
+//		int MRU_2_996_484_A[12] = {0};
+//		int MRU_3_996_A[4] = {0};
+//		int MRU_3_996_484_A[8] = {0};
+//		int MRU_4_996_A[1] = {0};
+//		
+//		int MRU_26_B[72] = {0}; 
+//		int MRU_52_B[32] = {0};
+//		int MRU_52_26_B[16] = {0};
+//		int MRU_106_B[16] = {0};
+//		int MRU_106_26_B[8] = {0};
+//		int MRU_242_B[8] = {0};
+//		int MRU_484_B[4] = {0};
+//		int MRU_484_242_B[8] = {0};
+//		int MRU_996_B[2] = {0};
+//		int MRU_996_484_B[4] = {0};
+//		int MRU_2_996_B[1] = {0};
+//		
+//	};
+//	vector<vector<int>> MRU_allocation_A = {{144,&allocation_table->MRU_26_A},{64,&allocation_table->MRU_52_A},{32,&allocation_table->MRU_52_26_A},{32,&allocation_table->MRU_106_A},{16,&allocation_table->MRU_106_26_A},{16,&allocation_table->MRU_242_A},
+//	{8,&MRU_484_A},{16,&allocation_table->MRU_484_242_A},{4,&allocation_table->MRU_996_A},{8,&allocation_table->MRU_996_484_A},{2,&allocation_table->MRU_2_996_A},{12,&allocation_table->MRU_2_996_484_A},{4,&allocation_table->MRU_3_996_A},{8,&allocation_table->MRU_3_996_484_A},{1,&allocation_table->MRU_4_996_A}};
 	
 	// opt function
 	const vector<double> PRI_FACTOR = {2.5,2.0,1.5,1.0,0.5};
