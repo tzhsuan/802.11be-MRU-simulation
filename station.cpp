@@ -23,12 +23,12 @@ Station::Station(string device, int STA_ID,int priority, int sim_time, int packe
 	last_packet_sizes[0] = last_packet_sizes[1] = packet_size;
 	
 	//暫定選用rand選取MCS index，之後可能選用10%-50%頻道受干擾做實驗 
-	for(int i=0; i<72; i++)
+	for(int i=0; i<144; i++)
 	{
 		MCS_A[i] = rand()%12;
 		if(minMCS_A > MCS_A[i]) minMCS_A = MCS_A[i];
 	}
-	for(int i=0; i<144; i++)
+	for(int i=0; i<72; i++)
 	{
 		MCS_B[i] = rand()%12;
 		if(minMCS_B > MCS_B[i]) minMCS_B = MCS_B[i];
