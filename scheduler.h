@@ -22,6 +22,7 @@ public:
 	void schedule_access(int,double);
 	void schedule_access2CH(int,double);
 private:
+	const int priority_num = 4;
 	const int SIFS = 16;//mus
 	const int PIFS = 25;
 	const int ACK = 60;
