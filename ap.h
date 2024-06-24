@@ -32,7 +32,7 @@ public:
 	vector<int> ana_STPs; //Record tranmission time periods
 	vector<int> ana_TPs;
 	
-	
+	const int priority_num = 4;
 	int sumT = 0;
 	int sumT1 = 0;
 	int sumT2 = 0;
