@@ -79,7 +79,7 @@ void Scheduler::schedule_access(int method, double alpha)
 		{
 								
 			ap->updateSTAs(curTime4A,-1,true,false,false,BandwidthA,alpha);
-			for(int p = 0; BandwidthA > 0 && p < 5; p++)
+			for(int p = 0; BandwidthA > 0 && p < priority_num; p++)
 			{
 				BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,false,-1,p,-1);
 				//cout <<"優先級別 "<< 5-p<<"使用後剩餘頻寬 = " <<  BandwidthA << endl;
@@ -102,7 +102,7 @@ void Scheduler::schedule_access(int method, double alpha)
 			ap->updateSTAs(curTime4A,-1,false,true,false,BandwidthA,1.0);
 			//ap->sortSTAs(2);
 			int RemainRU_A = ap->remainRU_A[0];
-			for(int p = 0; RemainRU_A > 0 && p < 5; p++)
+			for(int p = 0; RemainRU_A > 0 && p < priority_num; p++)
 			{
 				RemainRU_A = ap->Tzu(curTime4A,RemainRU_A,false,-1,p,-1);
 				//cout <<"優先級別 "<< 5-p<<"使用後剩餘頻寬 = " <<  BandwidthA << endl;
@@ -162,21 +162,21 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 				ap->updateSTAs(curTime4A,-1,true,false,true,BandwidthA+BandwidthB,alpha);
 				ap->twoChUsersAlloc();
 				
-				for(int p = 0; BandwidthA > 0 && p < 5; p++)
+				for(int p = 0; BandwidthA > 0 && p < priority_num; p++)
 				{
 					BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,true,0,p,0);
 				}
-				for(int p = 0; BandwidthB > 0 && p < 5; p++)
+				for(int p = 0; BandwidthB > 0 && p < priority_num; p++)
 				{
 					BandwidthB = ap->knaspack_sra(curTime4B,BandwidthB,true,0,p,1);
 				}
 				
 				BandwidthA = ap->Bandwidth_A_26, BandwidthB = ap->Bandwidth_B_26;
-				for(int p = 0; BandwidthA > 0 && p < 5; p++)
+				for(int p = 0; BandwidthA > 0 && p < priority_num; p++)
 				{
 					BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,true,1,p,0);
 				}
-				for(int p = 0; BandwidthB > 0 && p < 5; p++)
+				for(int p = 0; BandwidthB > 0 && p < priority_num; p++)
 				{
 					BandwidthB = ap->knaspack_sra(curTime4B,BandwidthB,true,1,p,1);
 				}
@@ -225,7 +225,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			int tA =  durationA - 2 * SIFS - ACK;
 			int tB = durationB - 2 * SIFS - ACK;
 			// 指派success trans, start idx, delay
-			for(int p = 0; p < 5; p++)
+			for(int p = 0; p < priority_num; p++)
 			{
 				for(int i = 0; i < ap->station_list[p].size(); i++)
 				{
@@ -282,7 +282,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			int transTime = 0;
 			if(method == 3){
 				ap->updateSTAs(Time,ch,true,false,false,Bandwidth,alpha);		
-				for(int p = 0; Bandwidth > 0 && p < 5; p++)
+				for(int p = 0; Bandwidth > 0 && p < priority_num; p++)
 				{
 					Bandwidth = ap->knaspack_sra(Time,Bandwidth,false,-1,p,-1);
 				}
@@ -300,7 +300,7 @@ void Scheduler::schedule_access2CH(int method,double alpha)
 			ap->transmit2STAs(Time,transTime);
 			int duration = SIFS + transTime + SIFS + ACK;
 			
-			for(int p = 0; p < 5; p++)
+			for(int p = 0; p < priority_num; p++)
 			{
 				for(int i = 0; i < ap->station_list[p].size(); i++)
 				{
