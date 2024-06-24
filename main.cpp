@@ -8,11 +8,18 @@ using namespace std;
 int D = 5;
 int MILLION = 1000000;
 int T = 1; //原測資為5 
+int priority_num = 4; //schedular.h  ap.h需要同步更改 
 const vector<double> SL_STR_NSTR_RATIO = {0.2,0.4,0.4}; 
-const vector<int> PRI_PEOPLE = vector<int>{3,5,5,5,5};// 4*7的情況下 頻寬3600 ARR = 4060 會得到  3220  //更動為5個 
-const vector<int> TRAFFIC_ARRIVAL_RATES = vector<int>{50,20,160,300,100};// Mbit 20 160 300 100 => 2250  //更動為五個 
-const vector<int> MPDU_LENS = vector<int>{500,200,1000,500,500}; //Byte  //更動為五個  
-const vector<int> DEADLINES = vector<int>{5000,150000,200000,1000000,2000000}; // mus => 46.72w mus  //更動為五個  (5ms check)
+
+const vector<int> PRI_PEOPLE = vector<int>{5,5,5,5};// 4*7的情況下 頻寬3600 ARR = 4060 會得到  3220 
+const vector<int> TRAFFIC_ARRIVAL_RATES = vector<int>{20,160,300,100};// Mbit 20 160 300 100 => 2250  
+const vector<int> MPDU_LENS = vector<int>{200,1000,500,500}; //Byte  
+const vector<int> DEADLINES = vector<int>{150000,200000,1000000,2000000}; // mus => 46.72w mus  
+
+//const vector<int> PRI_PEOPLE = vector<int>{5,5,5,5,5};// 4*7的情況下 頻寬3600 ARR = 4060 會得到  3220  //更動為5個 
+//const vector<int> TRAFFIC_ARRIVAL_RATES = vector<int>{50,20,160,300,100};// Mbit 20 160 300 100 => 2250  //更動為五個 
+//const vector<int> MPDU_LENS = vector<int>{500,200,1000,500,500}; //Byte  //更動為五個  
+//const vector<int> DEADLINES = vector<int>{5000,150000,200000,1000000,2000000}; // mus => 46.72w mus  //更動為五個  (5ms check)
 const vector<string> Method_NAME = {"Joe_1CH_","Opt_1CH_","Tzu_1CH_","Joe_2CH_","Opt_2CH_","Tzu_2CH_"};   
 /* run this program using the console pauser or add your own getch, system("pause") or input loop */
 
@@ -35,11 +42,11 @@ void writeData(int Method,string _fn,vector<vector<double>> Datas)
 vector<double> get_anaErrRate(vector<vector<double>> THs,vector<vector<double>> MTHs) //分析數學分析與模擬誤差 
 {
 	double avg_Err = 0.0;
-	vector<double> avg_Errs(4,0.0);
+	vector<double> avg_Errs(priority_num,0.0);
 	int n = THs.size();
 	for(int i = 0; i < n; i++)
 	{
-		for(int j = 0; j < 5; j++)
+		for(int j = 0; j < priority_num; j++)
 		{
 			avg_Errs[j]+=abs(THs[i][j]-MTHs[i][j]) / THs[i][j] / n;
 		}
@@ -55,36 +62,36 @@ int main(int argc, char** argv) {
 	double alpha = 2.75;  //冠霖參數設置 2.75 
 	double sim_time = MILLION * D;
 	
-	vector<vector<double>> STAs_TH(5);
-	vector<vector<double>> STAs_D(5);
-	vector<double> P_TH(5);
-	vector<double> P_D(5);
+	vector<vector<double>> STAs_TH(priority_num);
+	vector<vector<double>> STAs_D(priority_num);
+	vector<double> P_TH(priority_num);
+	vector<double> P_D(priority_num);
 	
 	//vector<vector<double>> alpha_TH(20,vector<double>(4,0.0));
 	//vector<vector<double>> alpha_D(20,vector<double>(4,0.0));
 	
-	vector<int> VAR_PRI_PEOPLE = vector<int>{3,5,5,5,5};
+	vector<int> VAR_PRI_PEOPLE = vector<int>{5,5,5,5};
 	//vector<int> VAR_TRAFFIC_ARRIVAL_RATES = vector<int>{10,80,150,50};
 	
 	int initPN = 4;
 	int finPN = 60;
 	int initAlpha = alpha;
 	int finAlpha = alpha + 4;
-	//	int round4VarP = (finPN - initPN)/4 + 1;//finPN - initPN)/20 + 1
-	//	int round4VarAlpha = (finAlpha - initAlpha)*4 + 1;
+	//int round4VarP = (finPN - initPN)/4 + 1;//finPN - initPN)/20 + 1 //調整priority人數 
+	//int round4VarAlpha = (finAlpha - initAlpha)*4 + 1;
 	int round4VarP = 1; 
 	
-	vector<vector<double>> VAR_STA_TH(round4VarP,vector<double>(5,0.0));//20~100共9個
-	vector<vector<double>> VAR_STA_MTH(round4VarP,vector<double>(5,0.0));//Math  
-	vector<vector<double>> VAR_STA_MD(round4VarP,vector<double>(5,0.0));//Math 
-	vector<vector<double>> VAR_STA_D(round4VarP,vector<double>(5,0.0));
+	vector<vector<double>> VAR_STA_TH(round4VarP,vector<double>(priority_num,0.0));//20~100共9個
+	vector<vector<double>> VAR_STA_MTH(round4VarP,vector<double>(priority_num,0.0));//Math  
+	vector<vector<double>> VAR_STA_MD(round4VarP,vector<double>(priority_num,0.0));//Math 
+	vector<vector<double>> VAR_STA_D(round4VarP,vector<double>(priority_num,0.0));
 	
-	vector<vector<double>> VAR_STA_packet_lr(round4VarP,vector<double>(5,0.0));
-	vector<vector<double>> VAR_STA_chs_util(round4VarP,vector<double>(2,0.0));
+	vector<vector<double>> VAR_STA_packet_lr(round4VarP,vector<double>(priority_num,0.0));
+	vector<vector<double>> VAR_STA_chs_util(round4VarP,vector<double>(priority_num,0.0));
 	
 	
-	vector<vector<double>> DEV_TH(5,vector<double>(3,0.0)); // 5個pri, 3個裝置類型 
-	vector<vector<double>> DEV_D(5,vector<double>(3,0.0)); // 5個pri, 3個裝置類型
+	vector<vector<double>> DEV_TH(priority_num,vector<double>(3,0.0)); // pri_num, 3個裝置類型 
+	vector<vector<double>> DEV_D(priority_num,vector<double>(3,0.0)); // pri_num, 3個裝置類型
 	
 	
 		
@@ -111,7 +118,7 @@ int main(int argc, char** argv) {
 				}
 			} 
 			double total_th = 0.0;
-			for(int p = 0; p < 5; p++)
+			for(int p = 0; p < priority_num; p++)
 			{
 				double p_pl = 0.0; // packet loss rate
 				double p_dealy = 0.0;
@@ -137,17 +144,17 @@ int main(int argc, char** argv) {
 					p_dealy+= STA_dealy;
 					p_math_delay+=STA_ana_D;
 					if(Method < 3){
-						VAR_STA_chs_util[num][0]+= STA_TH / 2402 / T;
+						VAR_STA_chs_util[num][0]+= STA_TH / 4*966*STA->MCS_R[11][0]*STA->MCS_R[11][1]/(12.8+0.8) / T;
 					}
 					else{
-						VAR_STA_chs_util[num][0]+= STA->n_suc_packet_chA * 8 * MPDU_LENS[p] / (sim_time * 2402 * T);
-						VAR_STA_chs_util[num][1]+= STA->n_suc_packet_chB * 8 * MPDU_LENS[p] / (sim_time * 1201 * T);	
+						VAR_STA_chs_util[num][0]+= STA->n_suc_packet_chA * 8 * MPDU_LENS[p] / (sim_time * 4*966*STA->MCS_R[11][0]*STA->MCS_R[11][1]/(12.8+0.8) * T);
+						VAR_STA_chs_util[num][1]+= STA->n_suc_packet_chB * 8 * MPDU_LENS[p] / (sim_time * 2*966*STA->MCS_R[11][0]*STA->MCS_R[11][1]/(12.8+0.8) * T);	
 					}
 
 					
 					cout << "Method= " << Method << endl;
-					std::cout <<"minMCS = "<< STA->minMCS_B <<", min channel rate= "<< 4*966*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8) << endl;
-					cout <<"優先級別 = "<< 5-p << endl;
+					std::cout <<"minMCS = "<< STA->minMCS_A <<", min channel rate= "<< 4*966*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8) << endl;
+					cout <<"優先級別 = "<< priority_num-p << endl;
 					cout << "STA ID:"<< STA->STA_ID <<", 封包總數 = " << STA->packets.size() << ", success transmission = " << STA->success_trans<<", 吞吐量 = "<< STA_TH  <<", 延遲 = "<< STA_dealy << endl;
 					cout << "封包遺失率 = " << (double)STA->n_expired_packet / STA->packets.size() << ", 在A頻道傳輸數量 = " << STA->n_suc_packet_chA <<", 在B頻道傳輸數量 = "<< STA->n_suc_packet_chB  << endl;
 					cout << "Device type = " << STA->device << endl;
@@ -200,7 +207,7 @@ int main(int argc, char** argv) {
 		
 		 
 		 
-		for(int p = 0; p < 5; p++)
+		for(int p = 0; p < priority_num; p++)
 		{
 			VAR_PRI_PEOPLE[p]+=1;
 		}
@@ -210,7 +217,7 @@ int main(int argc, char** argv) {
 	}
 	
 	if(Method > 2){
-		for(int p = 0; p < 5; p++)
+		for(int p = 0; p < priority_num; p++)
 		{
 			int SL = SL_STR_NSTR_RATIO[0] * VAR_PRI_PEOPLE[p];
 			int STR = SL_STR_NSTR_RATIO[1] * VAR_PRI_PEOPLE[p];
@@ -236,12 +243,12 @@ int main(int argc, char** argv) {
 		//數學分析 誤差計算 
 		vector<double> avg_Errs = get_anaErrRate(VAR_STA_D,VAR_STA_MD);
 		
-		for(int p = 0; p < 5; p++)
+		for(int p = 0; p < priority_num; p++)
 		{
-			cout <<"優先級別 = "<< 5-p <<", 平均誤差 = "<<avg_Errs[p]*100 << "%" << endl;
+			cout <<"優先級別 = "<< priority_num-p <<", 平均誤差 = "<<avg_Errs[p]*100 << "%" << endl;
 		}
 	}*/
-	//writeData(Method,"VAR_STA_TH",VAR_STA_packet_lr);
+	//writeData(Method,"ALL_STA_TH",STAs_TH);
 	//writeData(Method,"VAR_STA_TH",VAR_STA_packet_lr);
 
 	//writeData(Method,"pad_VAR_STA_pl",VAR_STA_packet_lr);
