@@ -58,7 +58,7 @@ vector<double> get_anaErrRate(vector<vector<double>> THs,vector<vector<double>> 
 
 
 int main(int argc, char** argv) {
-	int Method = 0;  //自己調整方法 
+	int Method = 2;  //自己調整方法 
 	double alpha = 2.75;  //冠霖參數設置 2.75 
 	double sim_time = MILLION * D;
 	
@@ -144,7 +144,7 @@ int main(int argc, char** argv) {
 					p_dealy+= STA_dealy;
 					p_math_delay+=STA_ana_D;
 					if(Method < 3){
-						VAR_STA_chs_util[num][0]+= STA_TH / 4*966*STA->MCS_R[11][0]*STA->MCS_R[11][1]/(12.8+0.8) / T;
+						VAR_STA_chs_util[num][0]+= STA_TH / (4*966*STA->MCS_R[11][0]*STA->MCS_R[11][1]/(12.8+0.8)) / T;
 					}
 					else{
 						VAR_STA_chs_util[num][0]+= STA->n_suc_packet_chA * 8 * MPDU_LENS[p] / (sim_time * 4*966*STA->MCS_R[11][0]*STA->MCS_R[11][1]/(12.8+0.8) * T);
@@ -192,8 +192,8 @@ int main(int argc, char** argv) {
 				VAR_STA_D[num][p]+=p_dealy / T;
 				VAR_STA_MD[num][p]+=p_math_delay / T;
 							
-				cout <<"優先級別 = "<< 5-p <<", 總吞吐量/Mbits = "<<p_throughput << endl;
-				cout <<"優先級別 = "<< 5-p << ", 平均用戶延遲/ms = " << p_dealy << endl;
+				cout <<"優先級別 = "<< priority_num-p <<", 總吞吐量/Mbits = "<<p_throughput << endl;
+				cout <<"優先級別 = "<< priority_num-p << ", 平均用戶延遲/ms = " << p_dealy << endl;
 				total_avg_th+=p_throughput/T;
 				total_th+=p_throughput;
 			}
