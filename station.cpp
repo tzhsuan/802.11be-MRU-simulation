@@ -88,12 +88,13 @@ void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool isTzuFunc, bool
 				else if(Bandwidth == 148) MAX_DR = 4*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8);
 				else MAX_DR = 2*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8);
 				
-				if (sim_time > packets[i].deadline)
+				double tmp = double(packets[i].packetSize)/5000;
+				if (curTime+5000 > packets[i].deadline || curTime+5000 > sim_time)
 				{
 					is_timecritical = true;
+					tmp = double(packets[i].packetSize)/(min(sim_time,packets[i].deadline) - curTime);
 				}
 				
-				double tmp = double(packets[i].packetSize)/(min(sim_time,packets[i].deadline) - curTime);
 				if(!isinf(tmp) && tmp > 0 && tmp < MAX_DR) required_dr+=tmp;
 				else{
 					//startIdx+=1;
