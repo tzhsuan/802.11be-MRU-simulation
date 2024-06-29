@@ -69,12 +69,19 @@ void Scheduler::schedule_access(int method, double alpha)
 {
 	int curTime4A = 0;
 	int c = 0;
-	
+	//if(ch == 1)	vector<vector<int>> allocation_table(11);
+	//else vector<vector<int>> allocation_table(15);
+	vector<vector<int>> allocation_table(15);
+	for(int i = 0; i < allocation_table.size();i++)
+	{
+		//if (ch == 1) allocation_table[i] = vector<int>(remainRU_B[i],0);
+		//else allocation_table[i] = vector<int>(remainRU_A[i],0);
+		allocation_table[i] = vector<int>(remainRU_A[i],0);
+	}
 	while(curTime4A < sim_time)
 	{
 		int transTime = 0;
 		int BandwidthA = ap->Bandwidth_A_26;
-		
 		if(method == 0)
 		{
 								
@@ -86,7 +93,7 @@ void Scheduler::schedule_access(int method, double alpha)
 			}
 			//ap->print_info();
 			//cout << "剩餘頻寬 = " <<  BandwidthA << endl;
-
+			transTime = ap->find_avg_length(curTime4A);
 		}
 		else if(method == 1)
 		{
@@ -96,23 +103,32 @@ void Scheduler::schedule_access(int method, double alpha)
 			BandwidthA = ap->opt_FGC(BandwidthA,true,false,false);
 			//cout << "剩餘頻寬 = " <<  BandwidthA << endl; 
 			//ap->print_info();
+			transTime = ap->find_avg_length(curTime4A);
 		}
 		else if(method == 2) //Tzu method
 		{
 			ap->updateSTAs(curTime4A,-1,false,true,false,BandwidthA,1.0);
 			//ap->sortSTAs(2);
-			int RemainRU_A = ap->remainRU_A[0];
-			for(int p = 0; RemainRU_A > 0 && p < priority_num; p++)
+			int RemainRU = remainRU_A[0];
+			for(int p = 0; RemainRU > 0 && p < priority_num; p++)
 			{
-				RemainRU_A = ap->Tzu(curTime4A,RemainRU_A,false,-1,p,-1);
-				//cout <<"優先級別 "<< 5-p<<"使用後剩餘頻寬 = " <<  BandwidthA << endl;
+				RemainRU = ap->Tzu(allocation_table,curTime4A,RemainRU,false,-1,p,-1);
+				cout <<"優先級別 "<< priority_num-p<<"使用後剩餘頻寬 = " <<  RemainRU << endl;
 			}
-
-			//cout << "剩餘頻寬 = " <<  RemainRU_A << endl; 
+			cout << "剩餘頻寬 = " <<  RemainRU << endl; 
+			for(int i = 0; i < 15;i++)
+			{
+				for(int j=0;j<remainRU_A[i];j++)
+				{
+					allocation_table[i][j] = 0;
+				}
+			} 
 			//ap->print_info();
+			transTime = 5000; //5ms
+			if(curTime4A + transTime > sim_time) transTime = sim_time - curTime4A; 
 		}
-		transTime = ap->find_avg_length(curTime4A);//
-		ap->transmit2STAs(curTime4A,transTime);//要改32768 
+//		transTime = ap->find_avg_length(curTime4A);//計算傳輸時間 
+		ap->transmit2STAs(curTime4A,transTime);//冠霖方法原本設32768 
 
 		
 
@@ -127,9 +143,11 @@ void Scheduler::schedule_access(int method, double alpha)
 		}
 		
 		 //延遲傳輸的話 傳輸時間可以拉高很多 
-		//cout << "當前時間 = " <<  curTime4A << endl; 
+		cout << "當前時間 = " <<  curTime4A << endl; 
 		c+=1;
 	}
+//	allocation_table.clear();
+//	vector<vector<int>>().swap(allocation_table); 
 	ap->sortSTAs(0);
 	cout << "跑圈" << c<< endl; 
 }
