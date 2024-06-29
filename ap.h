@@ -3,6 +3,8 @@
 
 #include <cmath>
 #include "station.h"
+#include "hungarian_optimizer.h"
+#include "secure_matrix.h"
 #include <vector>
 #include <map>
 #include <algorithm>
@@ -10,6 +12,7 @@
 #include <sstream>
 #include <cstdlib>
 #include <exception> 
+
 class AP{
 public:
 	//MCS index is 11
@@ -19,7 +22,6 @@ public:
 	//guard intervals is 0.8μs
 	vector<int> traffic_arrival_rates;
 	vector<vector<Station>> station_list;
-	vector<vector<int>> allocation_table;
 	
 	const int OFDMA_DURATION = 32768;
 	const int Bandwidth_A_26 = 148;//320 MHz 148 
@@ -41,8 +43,6 @@ public:
 	int last2_T = 0;
 	
 	
-	int remainRU_B[11] = {72,32,16,16,8,8,4,8,2,4,1};	
-    int remainRU_A[15] = {144,64,32,32,16,16,8,16,4,8,2,12,4,8,1};
 	int allocatin_table_B[72] ={0};
 	int allocatin_table_A[144] ={0};  
 	
@@ -52,9 +52,10 @@ public:
 	void updateSTAs(int,int,bool,bool,bool,int,double);
 	//int knaspack_sra(int,int,int);
 	int knaspack_sra(int,int,bool,int,int,int);
-	int Tzu(int,int,bool,int,int,int);
-	vector<int> &MRU_map_26(int,int);
-	void renew_allocation_table(int,int,vector<int>);
+	int Tzu(vector<vector<int>>&,int,int,bool,int,int,int);
+	void MRU_map_26(vector<int>&,vector<vector<int>>&,int,int);
+	void renew_allocation_table(vector<vector<int>>&,int,int,vector<int>);
+	void UpdateCosts(const vector<vector<float>>&,SecureMat<float>*);
 	int allocDR(bool,int,int,int);
 	int find_avg_length(int);
 	int find_avg_len4MLO0(int);
