@@ -1,4 +1,5 @@
 #include "ap.h"
+#include "hungarian_optimizer.h"
 using namespace std;
 
 //用來寫我跟其他論文排程的演算法 
@@ -373,16 +374,13 @@ void appendVector(std::vector<int>& target, std::vector<int>& source) {
   target.insert(target.end(), source.begin(), source.end());
 }
 
-vector<int>& AP::MRU_map_26(int MRUtype, int location) {
-	vector<int> map_26;
-	vector<int> arr1;
-	vector<int> arr2;
-	vector<int> arr3;
+void AP::MRU_map_26(vector<int>& map_26,vector<vector<int>>& allocation_table,int MRUtype, int location) {
+	//cout << "RUtype = " << MRUtype <<endl;
 	switch (MRUtype) {
-  		case 1: //26
+  		case 0: //26
 			map_26.push_back(location);
     	    break;
-  		case 2: //52
+  		case 1: //52
     		if (location %4 >1)
     		{
     			location = location/4*9+location %4*2+1;
@@ -396,12 +394,11 @@ vector<int>& AP::MRU_map_26(int MRUtype, int location) {
     			map_26.push_back(location+1);
 			}
     		break;
-  		case 3: //52+26
-  			map_26 = MRU_map_26(2, MRUtable_52_26[location][0]);
-  			arr1 = MRU_map_26(1, MRUtable_52_26[location][1]);
-  			appendVector(map_26,arr1);
+  		case 2: //52+26
+  			MRU_map_26(map_26,allocation_table,1, MRUtable_52_26[location][0]);
+  			MRU_map_26(map_26,allocation_table,0, MRUtable_52_26[location][1]);
     		break;
-   		case 4: //106
+   		case 3: //106
     		if (location %2 >0)
     		{
     			location = location/2*9+location%2*4+1;
@@ -413,61 +410,52 @@ vector<int>& AP::MRU_map_26(int MRUtype, int location) {
 				for(int i=0;i<4;i++) map_26.push_back(location+i);
 			}
     		break;
-  		case 5: //106+26
-  			map_26 = MRU_map_26(4,MRUtable_106_26[location][0]);
-  			arr1 = MRU_map_26(1,MRUtable_106_26[location][1]);
-  			appendVector(map_26,arr1);	
+  		case 4: //106+26
+  			MRU_map_26(map_26,allocation_table,3,MRUtable_106_26[location][0]);
+  			MRU_map_26(map_26,allocation_table,0,MRUtable_106_26[location][1]);
 		    break;	
-  		case 6: //242
+  		case 5: //242
             location = location*9;
             for(int i=0;i<9;i++) map_26.push_back(location+i);
 		    break;		
-  		case 7: //484
+  		case 6: //484
             location = location*18;
             for(int i=0;i<18;i++) map_26.push_back(location+i);
 		    break;		
-  		case 8: //484+242
-  			map_26 = MRU_map_26(7,MRUtable_484_242[location][0]);
-  			arr1 = MRU_map_26(6,MRUtable_484_242[location][1]);
-  			appendVector(map_26,arr1);	
+  		case 7: //484+242
+  			MRU_map_26(map_26,allocation_table,6,MRUtable_484_242[location][0]);
+  			MRU_map_26(map_26,allocation_table,5,MRUtable_484_242[location][1]);	
 		    break;		
-  		case 9: //996
+  		case 8: //996
             location = location*36;
             for(int i=0;i<36;i++) map_26.push_back(location+i);
 		    break;	
-  		case 10: //996+484
-  			map_26 = MRU_map_26(9,MRUtable_996_484[location][0]);
-  			arr1 = MRU_map_26(7,MRUtable_996_484[location][1]);
-  			appendVector(map_26,arr1);	
+  		case 9: //996+484
+  			MRU_map_26(map_26,allocation_table,8,MRUtable_996_484[location][0]);
+  			MRU_map_26(map_26,allocation_table,6,MRUtable_996_484[location][1]);
 			break;	
-  		case 11: //2*996
+  		case 10: //2*996
             location = location*72;
             for(int i=0;i<72;i++) map_26.push_back(location+i);
 		    break;		
-  		case 12: //2*996+484
-  			map_26 = MRU_map_26(9,MRUtable_2_996_484[location][0]);
-  			arr1 = MRU_map_26(9,MRUtable_2_996_484[location][1]);
-  			arr2 = MRU_map_26(7,MRUtable_2_996_484[location][2]);
-  			appendVector(map_26,arr1);		
-			appendVector(map_26,arr2);			
+  		case 11: //2*996+484
+  			MRU_map_26(map_26,allocation_table,8,MRUtable_2_996_484[location][0]);
+  			MRU_map_26(map_26,allocation_table,8,MRUtable_2_996_484[location][1]);
+  			MRU_map_26(map_26,allocation_table,6,MRUtable_2_996_484[location][2]);		
 			break;
-	    case 13: //3*996
-  			map_26 = MRU_map_26(9,MRUtable_3_996[location][0]);
-  			arr1 = MRU_map_26(9,MRUtable_3_996[location][1]);
-  			arr2 = MRU_map_26(9,MRUtable_3_996[location][2]);
-  			appendVector(map_26,arr1);		
-			appendVector(map_26,arr2);			
+	    case 12: //3*996
+  			MRU_map_26(map_26,allocation_table,8,MRUtable_3_996[location][0]);
+  			MRU_map_26(map_26,allocation_table,8,MRUtable_3_996[location][1]);
+  			MRU_map_26(map_26,allocation_table,8,MRUtable_3_996[location][2]);		
 			break;		
-	    case 14: //3*996+484
-  			map_26 = MRU_map_26(9,MRUtable_3_996_484[location][0]);
-  			arr1 = MRU_map_26(9,MRUtable_3_996_484[location][1]);
-  			arr2 = MRU_map_26(9,MRUtable_3_996_484[location][2]);
-  			arr3 = MRU_map_26(9,MRUtable_3_996_484[location][3]);
-  			appendVector(map_26,arr1);		
-			appendVector(map_26,arr2);	
-			appendVector(map_26,arr3);			
+	    case 13: //3*996+484
+  			MRU_map_26(map_26,allocation_table,8,MRUtable_3_996_484[location][0]);
+  			MRU_map_26(map_26,allocation_table,8,MRUtable_3_996_484[location][1]);
+  			MRU_map_26(map_26,allocation_table,8,MRUtable_3_996_484[location][2]);
+  			MRU_map_26(map_26,allocation_table,6,MRUtable_3_996_484[location][3]);
+		
 			break;		
-  		case 15: //4*996
+  		case 14: //4*996
             location = location*144;
             for(int i=0;i<144;i++) map_26.push_back(location+i);
 		    break;								   		
@@ -475,16 +463,23 @@ vector<int>& AP::MRU_map_26(int MRUtype, int location) {
    			// Code to execute if expression doesn't match any case
     	break;
 	}
-  return map_26;
+	//cout << "分配記憶體大小 = " <<  map_26.capacity() << endl;
+//	for (int num : map_26) {
+//		std::cout << num << " ";
+//  	}
+//  	std::cout << std::endl;	
+//	cout << map_26.size() << endl;
+//	cout << map_26[0] << endl;	
 }
 
-void AP::renew_allocation_table(int ch, int MRUtype, vector<int> map_26)
+void AP::renew_allocation_table(vector<vector<int>>& allocation_table,int ch, int MRUtype, vector<int> map_26)
 {
 	for (int i=0;i<map_26.size();i++)
 	{
 		allocation_table[0][map_26[i]] = 1; //26
 		if(map_26[i]%9<4) allocation_table[1][(map_26[i] - map_26[i]/9)/2] = 1; //52
 		else if(map_26[i]%9>4) allocation_table[1][(map_26[i] - map_26[i]/9 -1)/2] = 1;
+
 		
 		if(map_26[i]%9<4) allocation_table[3][(map_26[i] - map_26[i]/9)/4] = 1; //106
 		else if(map_26[i]%9>4) allocation_table[3][(map_26[i] - map_26[i]/9 -1)/4] = 1;
@@ -492,29 +487,142 @@ void AP::renew_allocation_table(int ch, int MRUtype, vector<int> map_26)
 		allocation_table[5][map_26[i]/9] = 1; //242
 		allocation_table[6][map_26[i]/18] = 1; //484
 		allocation_table[8][map_26[i]/36] = 1; //996
+		allocation_table[10][map_26[i]/72] = 1; //2_996
+		if (ch!=1)	allocation_table[14][map_26[i]/144] = 1; //4_996
 	}
-}
-int AP::Tzu(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
-{
-	//vector<int> time_critical;
-	if(ch == 1)	vector<vector<int>> allocation_table(11);
-	else vector<vector<int>> allocation_table(15);
-	for(int i = 0; i < allocation_table.size();i++)
+	for(int j=0;j<allocation_table[2].size();j++) //52+26 
 	{
-			if (ch == 1) allocation_table[i] = vector<int>(remainRU_B[i],0);
-			else allocation_table[i] = vector<int>(remainRU_A[i],0);
+		if (allocation_table[2][j]!=1)
+		{
+			for(int k=0;k<allocation_table[0].size();k++) 
+			{
+				if(allocation_table[0][k] == 1 && k == MRUtable_52_26[j][1])	allocation_table[2][j]=1;
+			}
+			for(int k=0;k<allocation_table[1].size();k++)
+			{
+				if(allocation_table[1][k] == 1 && k == MRUtable_52_26[j][0])	allocation_table[2][j]=1;
+			}
+		}
+	} 
+	for(int j=0;j<allocation_table[4].size();j++) //106+26 
+	{
+		if (allocation_table[4][j]!=1)
+		{
+			for(int k=0;k<allocation_table[0].size();k++)
+			{
+				if(allocation_table[0][k] == 1 && k == MRUtable_106_26[j][1])	allocation_table[4][j]=1;
+			}
+			for(int k=0;k<allocation_table[3].size();k++)
+			{
+				if(allocation_table[3][k] == 1 && k == MRUtable_106_26[j][0])	allocation_table[4][j]=1;
+			}
+		}
+	} 
+	for(int j=0;j<allocation_table[7].size();j++) //484_242 
+	{
+		if (allocation_table[7][j]!=1)
+		{
+			for(int k=0;k<allocation_table[5].size();k++)
+			{
+				if(allocation_table[5][k] == 1 && k == MRUtable_484_242[j][1])	allocation_table[7][j]=1;
+			}
+			for(int k=0;k<allocation_table[6].size();k++)
+			{
+				if(allocation_table[6][k] == 1 && k == MRUtable_484_242[j][0])	allocation_table[7][j]=1;
+			}
+		}
+	} 
+	for(int j=0;j<allocation_table[9].size();j++) //996_484 
+	{
+		if (allocation_table[9][j]!=1)
+		{
+			for(int k=0;k<allocation_table[6].size();k++)
+			{
+				if(allocation_table[6][k] == 1 && k == MRUtable_996_484[j][1])	allocation_table[9][j]=1;
+			}
+			for(int k=0;k<allocation_table[8].size();k++)
+			{
+				if(allocation_table[8][k] == 1 && k == MRUtable_996_484[j][0])	allocation_table[9][j]=1;
+			}
+		}
+	} 
+	if(ch!=1)
+	{
+		for(int j=0;j<allocation_table[11].size();j++) //2_996_484 
+		{
+			if (allocation_table[11][j]!=1)
+			{
+				for(int k=0;k<allocation_table[6].size();k++)
+				{
+					if(allocation_table[6][k] == 1 && k == MRUtable_2_996_484[j][2])	allocation_table[11][j]=1;
+				}
+				for(int k=0;k<allocation_table[8].size();k++)
+				{
+					if(allocation_table[8][k] == 1 && (k == MRUtable_2_996_484[j][0] || k == MRUtable_2_996_484[j][1]))	allocation_table[11][j]=1;
+				}
+			}
+		} 
+		for(int j=0;j<allocation_table[12].size();j++) //3_996
+		{
+			if (allocation_table[12][j]!=1)
+			{
+				for(int k=0;k<allocation_table[8].size();k++)
+				{
+					if(allocation_table[8][k] == 1 && (k == MRUtable_3_996[j][0] || k == MRUtable_3_996[j][1] || k == MRUtable_3_996[j][2]))	allocation_table[12][j]=1;
+				}
+			}
+		} 
+		for(int j=0;j<allocation_table[13].size();j++) //3_996_484
+		{
+			if (allocation_table[13][j]!=1)
+			{
+				for(int k=0;k<allocation_table[8].size();k++)
+				{
+					if(allocation_table[8][k] == 1 && (k == MRUtable_3_996_484[j][0] || k == MRUtable_3_996_484[j][1] || k == MRUtable_3_996_484[j][2]))	allocation_table[12][j]=1;
+				}
+				for(int k=0;k<allocation_table[6].size();k++)
+				{
+					if(allocation_table[6][k] == 1 && (k == MRUtable_3_996_484[j][3]))	allocation_table[13][j]=1;
+				}
+			}
+		} 
 	}
+//	for (int num : map_26) {
+//	   std::cout << num << " ";
+// 	}
+// 	std::cout << std::endl;	
+}
+
+void AP::UpdateCosts(const std::vector<std::vector<float>>& association_mat,
+                 SecureMat<float>* costs) {
+  size_t rows_size = association_mat.size();
+  size_t cols_size = rows_size > 0 ? association_mat.at(0).size() : 0;
+
+  costs->Resize(rows_size, cols_size);
+
+  for (size_t row_idx = 0; row_idx < rows_size; ++row_idx) {
+    for (size_t col_idx = 0; col_idx < cols_size; ++col_idx) {
+      (*costs)(row_idx, col_idx) = association_mat.at(row_idx).at(col_idx);
+    }
+  }
+}
+
+int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
+{
+	vector<int> non_critical;
+	double total_DR = 0.0;
 	for (int i = 1; i <= station_list[p].size(); i++)
 	{
 		Station *STA = &station_list[p][i-1];
 		if(STA->is_timecritical == true)
 		{
-			//time_critical.push_back(i-1);
 			if(two_ch_mode && STA->requiredDRs[m][ch] == 0.0) continue;
 	    	if(!two_ch_mode && STA->required_dr == 0.0) continue;
 	    	
 			int MRUtype = 0; 
+			int allocated =0;
 			double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;
+			//cout <<"排程結果 = "<< RD <<endl;
 				for (MRUtype = 0; MRUtype < allocation_table.size(); MRUtype++)
 				{
 					if(RD <= MRUs_dr[MRUtype+1]) break;
@@ -528,13 +636,28 @@ int AP::Tzu(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
   						double En = 0.0; 
   						int min_mcs = 12;
   						vector<int> map_26;
-						map_26 = MRU_map_26(j,l);
+						MRU_map_26(map_26,allocation_table,j,l);
+						//cout <<"l = "<< l <<endl;
+//						for (int num : map_26) {
+//						   std::cout << num << " ";
+//  						}
+//  						std::cout << std::endl;	
   						for(int index = 0; index < map_26.size();index++)
   						{
-  							if (ch ==1) if(min_mcs > STA->MCS_B[index]) min_mcs = STA->MCS_B[index];	  
-  							else if(min_mcs > STA->MCS_A[index]) min_mcs = STA->MCS_A[index];	  
+  							if (ch == 1)
+  							{
+								if(min_mcs > STA->MCS_B[index])	min_mcs = STA->MCS_B[index];
+							}	  
+  							else
+							{
+								if(min_mcs > STA->MCS_A[index]) min_mcs = STA->MCS_A[index];	
+							}
+//							cout <<"index = "<< index <<endl;	  
+//  						cout <<"min_mcs = "<< min_mcs <<endl;
 						}
 						En = MRUs[j+1]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8);	
+//						cout <<"En = "<< En <<endl;
+//						cout <<"RD = "<< RD <<endl;
 						if (En >= RD)
 						{
 							//station_list[p][i-1].allocDRs[m][ch] = min(RD,En);
@@ -542,30 +665,287 @@ int AP::Tzu(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
 							{
 								if(ch == 0)	station_list[p][i-1].allocDRs[m][ch] =  min(RD,En);
 								else station_list[p][i-1].allocDRs[m][ch] =  min(RD,En);
-								//total_DR+= station_list[p][i-1].allocDRs[m][ch];
+								total_DR+= station_list[p][i-1].allocDRs[m][ch];
 							} 
 							else
 							{
 								station_list[p][i-1].data_rate = min(RD,En);
-								//total_DR+=station_list[p][i-1].data_rate;
-							}					
-							renew_allocation_table(ch,j,map_26);
+								total_DR+=station_list[p][i-1].data_rate;
+								//cout << station_list[p][i-1].data_rate; 
+							}
+							allocated = 1;					
+							renew_allocation_table(allocation_table,ch,j,map_26);	
+							map_26.clear(); 
+							vector<int>().swap(map_26);//釋放記憶體空間，非常重要因為map會一直增長空間最後導致無法執行
+							break;
 						} 
+						map_26.clear();
+						vector<int>().swap(map_26);//釋放記憶體空間，非常重要因為map會一直增長空間最後導致無法執行
 					}
+					if(allocated ==1) break;
 				}
+			if(allocated != 1) non_critical.push_back(i-1);
+		}
+		else
+		{
+			non_critical.push_back(i-1);
 		}
 			
-
-
 	}
 	
-//	alloc_result = dp[Bandwidth].second;
-//	//cout <<"排程結果 = "<< alloc_result<<endl;
-//	int remain_BW = two_ch_mode?Bandwidth - allocDR(true,m,p,ch):Bandwidth - allocDR(false,-1,p,-1); // allocDR那邊要將DR ASSIGN給 STA的allocDRs
-//	//int remain_BW = Bandwidth - allocDR(false,-1,p,-1);
-//	reOrderSTAs(p);
-//	//cout <<"remain_BW = "<< remain_BW<<endl;
-//	return remain_BW;
+	int minMRUtype = 12;
+	for (int i = 1; i <= non_critical.size(); i++)
+	{
+		Station *STA = &station_list[p][i-1];
+		if(two_ch_mode && STA->requiredDRs[m][ch] == 0.0) continue;
+	    if(!two_ch_mode && STA->required_dr == 0.0) continue;
+		double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;	
+		//cout <<"排程結果 = "<< RD <<endl;
+		for (int MRUtype = 0; MRUtype < allocation_table.size(); MRUtype++)
+		{
+			if(RD <= MRUs_dr[MRUtype+1])
+			{
+				if(minMRUtype > MRUtype)
+				{
+					minMRUtype = MRUtype;
+				}
+				break;
+			}
+		}
+	}
+	//cout << "minMRUtype = "<< minMRUtype << endl;
+	
+	vector<int>	KMindex; //MRU location index 
+	vector<int>	remainRU(allocation_table.size(),0);
+	for (int i=0;i<allocation_table.size();i++)
+	{
+		for(int j=0;j<allocation_table[i].size();j++)
+		{
+			if(allocation_table[i][j] == 0)	remainRU[i]+=1;
+		}
+		//cout <<"MRUtype = "<< MRUs[i+1] <<", remain_RU = "<< remainRU[i] <<endl;
+	}
+	cout <<"remain_RU = "<< remainRU[0] <<endl;
+	int MRUtype;
+	for (MRUtype = minMRUtype; MRUtype >0; MRUtype--)
+	{
+		if(non_critical.size()<= remainRU[MRUtype])	break;
+	}
+	cout << "station_list[p].size() = "<< station_list[p].size() << endl;
+	cout << "non_critical.size() = "<< non_critical.size() << endl;
+	cout << "MRUtype = "<< MRUtype << endl;
+	
+	if(MRUtype == 12 || non_critical.size() == 0)
+	{
+		int RemainRU_26 = remainRU[0];
+		remainRU.clear();
+		vector<int>().swap(remainRU); 
+		return RemainRU_26;
+	}
+	
+	for(int j=0;j<allocation_table[MRUtype].size();j++)
+	{
+		if(allocation_table[MRUtype][j] != 1) {
+			KMindex.push_back(j);
+		}
+	}
+	
+	vector<vector<float>> association_mat(non_critical.size());
+	
+	for (int i = 1; i <= non_critical.size(); i++)
+	{
+		Station *STA = &station_list[p][i-1];
+		if(two_ch_mode && STA->requiredDRs[m][ch] == 0.0) continue;
+	    if(!two_ch_mode && STA->required_dr == 0.0) continue;
+		double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;	
+		for(int j=0;j<allocation_table[MRUtype].size();j++)
+		{
+			if(allocation_table[MRUtype][j] == 0)
+			{
+				int min_mcs = 12;
+				vector<int> map_26;
+				MRU_map_26(map_26,allocation_table,MRUtype,j);
+				for(int index = 0; index < map_26.size();index++)
+  				{
+  					if (ch ==1)
+  					{
+						if(min_mcs > STA->MCS_B[index])	min_mcs = STA->MCS_B[index];
+					}	  
+  					else
+					{
+						if(min_mcs > STA->MCS_A[index]) min_mcs = STA->MCS_A[index];	
+					}
+					//cout <<"index = "<< index <<endl;	  
+  				    //cout <<"min_mcs = "<< min_mcs <<endl;
+				}
+				double En = MRUs[MRUtype+1]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8);
+				association_mat[i-1].push_back(min(RD,En));
+				map_26.clear(); 
+				vector<int>().swap(map_26);//釋放記憶體空間，非常重要因為map會一直增長空間最後導致無法執行
+			}
+		}
+	}
+	
+	HungarianOptimizer<float> optimizer;
+	std::vector<std::pair<size_t, size_t>> assignments;
+	UpdateCosts(association_mat, optimizer.costs());
+	// entry of hungarian optimizer maximize-weighted matching
+  	optimizer.Maximize(&assignments);
+  	//cout <<"index = "<< 1 <<endl;
+  	for (const auto& assignment : assignments) {
+    	std::cout << "    (" << assignment.first << ", " << assignment.second << ")" << std::endl;
+    	
+  	}
+	
+  	for(int i=0;i<assignments.size();i++)
+  	{
+  		
+  		Station *STA = &station_list[p][assignments[i].first];
+  		if(two_ch_mode)
+		{
+			if(ch == 0)	station_list[p][assignments[i].first].allocDRs[m][ch] =  association_mat[assignments[i].first][assignments[i].second];
+			else station_list[p][assignments[i].first].allocDRs[m][ch] =  association_mat[assignments[i].first][assignments[i].second];
+			total_DR+= station_list[p][assignments[i].first].allocDRs[m][ch];
+		} 
+		else
+		{
+			station_list[p][assignments[i].first].data_rate = association_mat[assignments[i].first][assignments[i].second];
+			total_DR+=station_list[p][assignments[i].first].data_rate;
+			//cout << station_list[p][assignments[i].first].data_rate; 
+		}
+		//cout <<"KMindex[assignments[i].first] = "<< KMindex[assignments[i].first] <<endl;
+		//cout <<"KMindex[assignments[i].second] = "<< KMindex[assignments[i].second] <<endl;
+		allocation_table[MRUtype][KMindex[assignments[i].second]] = 1;
+		vector<int> map_26;
+		MRU_map_26(map_26,allocation_table,MRUtype,KMindex[assignments[i].second]);
+		renew_allocation_table(allocation_table,ch,MRUtype,map_26);	
+		map_26.clear(); 
+		vector<int>().swap(map_26);//釋放記憶體空間，非常重要因為map會一直增長空間最後導致無法執行
+	}
+	
+	
+	for(int i=0;i<assignments.size();i++)
+  	{
+  		
+  		Station *STA = &station_list[p][assignments[i].first];
+  		double preEN = two_ch_mode?station_list[p][assignments[i].first].allocDRs[m][ch]:station_list[p][assignments[i].first].data_rate;
+  		double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;
+  		if(preEN>=RD) continue;
+  		
+		//cout <<"preEN = "<< preEN <<endl;
+		int CanReAllocate = 0;
+		int index = KMindex[assignments[i].second];
+		for(int type = MRUtype; type<allocation_table.size()-1; type++)
+		{
+			vector<int> map_26;
+			MRU_map_26(map_26,allocation_table,type,index);
+			sort(map_26.begin(),map_26.end());
+
+			
+				for(int location=0; location<allocation_table[type+1].size();location++)
+				{
+					vector<int> map_26_next;
+					MRU_map_26(map_26_next,allocation_table,type+1,location);
+					
+					int check_ava =0;
+					int check_index =0;
+					int min_mcs=12;
+					for(int l=0;l<map_26_next.size();l++)
+					{
+						if(map_26[0]==map_26_next[l])
+						{
+							check_index = 1;
+							break;
+						}
+					}
+					//cout <<"check_index = "<< check_index <<endl;
+					if(check_index ==0) continue;
+					sort(map_26_next.begin(),map_26_next.end());
+					vector<int> v_intersection;
+					set_intersection(map_26.begin(), map_26.end(),map_26_next.begin(), map_26_next.end(),std::back_inserter(v_intersection));
+					vector<int> v_difference;
+					set_difference(map_26_next.begin(), map_26_next.end(), v_intersection.begin(), v_intersection.end(), inserter(v_difference, v_difference.begin()));
+					
+					//cout <<"check_index = "<< check_index <<endl;
+					//cout <<"map_26.size() = "<< map_26.size() <<endl;
+					//cout <<"map_26_next.size() = "<< map_26_next.size() <<endl;
+					//cout <<"v_intersection.size() = "<< v_intersection.size() <<endl;
+					//cout <<"v_difference.size() = "<< v_difference.size() <<endl;
+					for(int l=0;l<v_difference.size();l++)
+					{
+						
+						//cout <<"v_difference[l] = "<< v_difference[l] <<endl;
+						if(allocation_table[0][v_difference[l]] == 1)
+						{
+							CanReAllocate =-1;
+							break;
+						}
+						//cout <<"CanReAllocate = "<< CanReAllocate <<endl;
+						if (ch == 1)
+  						{
+							if(min_mcs > STA->MCS_B[v_difference[l]])	min_mcs = STA->MCS_B[v_difference[l]];
+						}	  
+  						else
+						{
+							if(min_mcs > STA->MCS_A[v_difference[l]]) min_mcs = STA->MCS_A[v_difference[l]];	
+							//cout <<"min_mcs?? = "<< min_mcs <<endl;
+						}
+						
+					}
+					if(CanReAllocate == -1) break;
+					
+					if(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8) > preEN)
+					{
+  						if(two_ch_mode)	station_list[p][assignments[i].first].allocDRs[m][ch] = min(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8),RD);
+						else	station_list[p][assignments[i].first].data_rate = min(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8),RD);
+						renew_allocation_table(allocation_table,ch,type+1,map_26_next);	
+						index = location;
+						preEN = MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8);
+						if(preEN >=RD) CanReAllocate = 1;
+						else CanReAllocate = 0;
+						cout <<"min_mcs = "<< min_mcs <<endl;
+						cout <<"MRUtype = "<< type+1 <<endl;
+						cout <<"preEN = "<< preEN <<endl;
+						cout <<"RD = "<< RD <<endl;
+					}
+					else if(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8) <= preEN) CanReAllocate == -1;
+					map_26_next.clear(); 
+					vector<int>().swap(map_26_next);
+					v_intersection.clear(); 
+					vector<int>().swap(v_intersection);
+					v_difference.clear(); 
+					vector<int>().swap(v_difference);
+					break;
+				}				
+			map_26.clear(); 
+			vector<int>().swap(map_26);//釋放記憶體空間，非常重要因為map會一直增長空間最後導致無法執行
+			if(CanReAllocate == 0) continue;
+			else if(CanReAllocate == 1 || CanReAllocate == -1) break;
+		}
+	}
+	
+  	for (int i=0;i<allocation_table.size();i++)
+	{
+		remainRU[i]=0;
+		for(int j=0;j<allocation_table[i].size();j++)
+		{
+			if(allocation_table[i][j] == 0)	remainRU[i]+=1;
+		}
+		//cout <<"MRUtype = "<< MRUs[i+1] <<", remain_RU = "<< remainRU[i] <<endl;
+	}
+	
+  	
+	
+	int RemainRU_26 = remainRU[0];
+	remainRU.clear();
+	vector<int>().swap(remainRU); 
+	KMindex.clear();
+	vector<int>().swap(KMindex);
+	association_mat.clear();
+	vector<vector<float>>().swap(association_mat);
+	reOrderSTAs(p);
+	//cout <<"remain_RU_26 = "<< RemainRU_26 <<endl;
+	return RemainRU_26;
 }
 double AP::d_min(double a, double b) {
     if (std::abs(a - b) < 1e-9) {
