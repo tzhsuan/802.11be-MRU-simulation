@@ -54,6 +54,19 @@ void AP::updateSTAs(int curTime, int ch, bool isJoeFunc, bool isTzuFunc,bool two
 
 }
 
+void AP::updateEND(int curTime, int ch, bool isJoeFunc, bool isTzuFunc,bool two_ch_mode,int Bandwidth, double alpha) 
+{
+	for(int p = 0; p < priority_num; p++)
+	{
+		for(int i = 0; i < station_list[p].size(); i++)
+		{
+			Station *STA = &station_list[p][i];
+			STA->ENDupdateExpired(curTime);
+		}
+	}
+
+}
+
 void AP::opt_updateSTAs(int curTime, int ch,int sim_time, int Bandwidth)
 {
 	for(int p = 0; p < priority_num; p++)
@@ -76,7 +89,7 @@ void AP::opt_updateSTAs(int curTime, int ch,int sim_time, int Bandwidth)
 	}
 }
 
-int AP::allocDR(bool two_ch_mode, int m, int p, int ch)
+int AP::allocDR(vector<vector<int>>& allocation_table,bool two_ch_mode, int m, int p, int ch)
 {
 	stringstream ss(alloc_result);
 	string item;
@@ -91,23 +104,58 @@ int AP::allocDR(bool two_ch_mode, int m, int p, int ch)
 //		if(two_ch_mode) station_list[p][stoi(sta)].allocDRs[m][ch] = MRUs_dr[stoi(data_rate_idx)];
 //		else station_list[p][stoi(sta)].data_rate = MRUs_dr[stoi(data_rate_idx)];
 		Station *STA = &station_list[p][stoi(sta)];
+		double En =0.0;
+		double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;
+		int Canallocate = 0;
+		for(int i=0; i<allocation_table[stoi(data_rate_idx)-1].size();i++)
+		{
+			if(allocation_table[stoi(data_rate_idx)-1][i] == 0)
+			{
+				int min_mcs =12;
+				vector<int> map_26;
+				MRU_map_26(map_26,allocation_table,stoi(data_rate_idx)-1,i);
+				for(int index = 0; index < map_26.size();index++)
+  				{
+  					if (ch ==1)
+  					{
+						if(min_mcs > STA->MCS_B[index])	min_mcs = STA->MCS_B[index];
+					}	  
+  					else
+					{
+						if(min_mcs > STA->MCS_A[index]) min_mcs = STA->MCS_A[index];	
+					}
+					//cout <<"index = "<< index <<endl;	  
+  				    //cout <<"min_mcs = "<< min_mcs <<endl;
+				}
+				//cout <<"min_mcs = "<< min_mcs <<endl;
+				En = MRUs[stoi(data_rate_idx)]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8);				
+				renew_allocation_table(allocation_table,ch,stoi(data_rate_idx)-1,map_26);	
+				map_26.clear(); 
+				vector<int>().swap(map_26);//釋放記憶體空間，非常重要因為map會一直增長空間最後導致無法執行
+				Canallocate = 1;
+				break;
+			} 		
+		}
+
+		if(Canallocate == 0) continue;
 		if(two_ch_mode)
 		{
-			if(ch == 0)	station_list[p][stoi(sta)].allocDRs[m][ch] = MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
-			else station_list[p][stoi(sta)].allocDRs[m][ch] = MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+			if(ch == 0)	station_list[p][stoi(sta)].allocDRs[m][ch] = min(En,RD);
+			else station_list[p][stoi(sta)].allocDRs[m][ch] = min(En,RD);
 			total_DR+= station_list[p][stoi(sta)].allocDRs[m][ch];
 		} 
 		else
 		{
-			station_list[p][stoi(sta)].data_rate = MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+			station_list[p][stoi(sta)].data_rate = min(En,RD);
 			total_DR+=station_list[p][stoi(sta)].data_rate;
 		} 
 		//total_DR+=MRUs_dr[stoi(data_rate_idx)];
 		count_26+=MRUsToIdx[MRUs[stoi(data_rate_idx)]];
 		int idx = stoi(data_rate_idx);
-		//cout << station_list[p][stoi(sta)].STA_ID<<" 使用26-tone 數量 = "  << MRUsToIdx[MRUs[idx]] << ", 換成MRU = "<< MRUs[idx] << ", 資料速率 = "<< MRUs[stoi(data_rate_idx)]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8) << endl; 
+		cout << station_list[p][stoi(sta)].STA_ID<<", RD= "<< RD<<", 使用26-tone 數量 = "  << MRUsToIdx[MRUs[idx]] << ", 換成MRU = "<< MRUs[idx] << ", 資料速率 = "<< min(En,RD) << endl; 
 	}
-	//cout << "總資料速率 = " <<  total_DR << ", 使用了多少26-tone = "<<count_26 <<endl; 
+
+	cout << "總資料速率 = " <<  total_DR << ", 使用了多少26-tone = "<<count_26 <<endl; 
 	return count_26;
 
 }
@@ -319,7 +367,7 @@ void AP::print_info()
 //實驗 OFDMA的duration 到底要不要寫死
 // 
 
-int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
+int AP::knaspack_sra(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bool two_ch_mode,int m,int p, int ch)
 {
 	vector<pair<double, string>> dp(Bandwidth+1, {0.0, ""});
 	for (int i = 1; i <= station_list[p].size(); i++)
@@ -363,7 +411,7 @@ int AP::knaspack_sra(int curTime, int Bandwidth, bool two_ch_mode,int m,int p, i
 	}
 	alloc_result = dp[Bandwidth].second;
 	//cout <<"排程結果 = "<< alloc_result<<endl;
-	int remain_BW = two_ch_mode?Bandwidth - allocDR(true,m,p,ch):Bandwidth - allocDR(false,-1,p,-1); // allocDR那邊要將DR ASSIGN給 STA的allocDRs
+	int remain_BW = two_ch_mode?Bandwidth - allocDR(allocation_table,true,m,p,ch):Bandwidth - allocDR(allocation_table,false,-1,p,-1); // allocDR那邊要將DR ASSIGN給 STA的allocDRs
 	//int remain_BW = Bandwidth - allocDR(false,-1,p,-1);
 	reOrderSTAs(p);
 	//cout <<"remain_BW = "<< remain_BW<<endl;
@@ -459,9 +507,9 @@ void AP::MRU_map_26(vector<int>& map_26,vector<vector<int>>& allocation_table,in
             location = location*144;
             for(int i=0;i<144;i++) map_26.push_back(location+i);
 		    break;								   		
-  			default:
+  		default:
    			// Code to execute if expression doesn't match any case
-    	break;
+    		break;
 	}
 	//cout << "分配記憶體大小 = " <<  map_26.capacity() << endl;
 //	for (int num : map_26) {
@@ -481,7 +529,7 @@ void AP::renew_allocation_table(vector<vector<int>>& allocation_table,int ch, in
 		else if(map_26[i]%9>4) allocation_table[1][(map_26[i] - map_26[i]/9 -1)/2] = 1;
 
 		
-		if(map_26[i]%9<4) allocation_table[3][(map_26[i] - map_26[i]/9)/4] = 1; //106
+		if(map_26[i]%9<4) allocation_table[3][(map_26[i] - map_26[i]/9)/4] = 1; //106 
 		else if(map_26[i]%9>4) allocation_table[3][(map_26[i] - map_26[i]/9 -1)/4] = 1;
 		
 		allocation_table[5][map_26[i]/9] = 1; //242
@@ -644,7 +692,7 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 //  						std::cout << std::endl;	
   						for(int index = 0; index < map_26.size();index++)
   						{
-  							if (ch == 1)
+  							if (allocation_table.size() == 11) //ch==1
   							{
 								if(min_mcs > STA->MCS_B[index])	min_mcs = STA->MCS_B[index];
 							}	  
@@ -663,8 +711,9 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 							//station_list[p][i-1].allocDRs[m][ch] = min(RD,En);
 							if(two_ch_mode)
 							{
-								if(ch == 0)	station_list[p][i-1].allocDRs[m][ch] =  min(RD,En);
+								if(allocation_table.size() == 11)	station_list[p][i-1].allocDRs[m][ch] =  min(RD,En);
 								else station_list[p][i-1].allocDRs[m][ch] =  min(RD,En);
+								//cout <<"station_list[p][i-1].allocDRs[m][ch]  = "<< station_list[p][i-1].allocDRs[m][ch]  <<endl;
 								total_DR+= station_list[p][i-1].allocDRs[m][ch];
 							} 
 							else
@@ -696,7 +745,7 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 	int minMRUtype = 12;
 	for (int i = 1; i <= non_critical.size(); i++)
 	{
-		Station *STA = &station_list[p][i-1];
+		Station *STA = &station_list[p][non_critical[i-1]];
 		if(two_ch_mode && STA->requiredDRs[m][ch] == 0.0) continue;
 	    if(!two_ch_mode && STA->required_dr == 0.0) continue;
 		double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;	
@@ -725,15 +774,16 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 		}
 		//cout <<"MRUtype = "<< MRUs[i+1] <<", remain_RU = "<< remainRU[i] <<endl;
 	}
-	cout <<"remain_RU = "<< remainRU[0] <<endl;
+	//cout <<"remain_RU = "<< remainRU[0] <<endl;
 	int MRUtype;
 	for (MRUtype = minMRUtype; MRUtype >0; MRUtype--)
 	{
 		if(non_critical.size()<= remainRU[MRUtype])	break;
 	}
-	cout << "station_list[p].size() = "<< station_list[p].size() << endl;
-	cout << "non_critical.size() = "<< non_critical.size() << endl;
-	cout << "MRUtype = "<< MRUtype << endl;
+//	cout << "ch = "<< ch << endl;
+//	cout << "station_list[p].size() = "<< station_list[p].size() << endl;
+//	cout << "non_critical.size() = "<< non_critical.size() << endl;
+//	cout << "MRUtype = "<< MRUtype << endl;
 	
 	if(MRUtype == 12 || non_critical.size() == 0)
 	{
@@ -754,7 +804,7 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 	
 	for (int i = 1; i <= non_critical.size(); i++)
 	{
-		Station *STA = &station_list[p][i-1];
+		Station *STA = &station_list[p][non_critical[i-1]];
 		if(two_ch_mode && STA->requiredDRs[m][ch] == 0.0) continue;
 	    if(!two_ch_mode && STA->required_dr == 0.0) continue;
 		double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;	
@@ -767,7 +817,7 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 				MRU_map_26(map_26,allocation_table,MRUtype,j);
 				for(int index = 0; index < map_26.size();index++)
   				{
-  					if (ch ==1)
+  					if (allocation_table.size() == 11)
   					{
 						if(min_mcs > STA->MCS_B[index])	min_mcs = STA->MCS_B[index];
 					}	  
@@ -776,41 +826,43 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 						if(min_mcs > STA->MCS_A[index]) min_mcs = STA->MCS_A[index];	
 					}
 					//cout <<"index = "<< index <<endl;	  
-  				    //cout <<"min_mcs = "<< min_mcs <<endl;
 				}
+				//cout <<"min_mcs = "<< min_mcs <<", MRUtype = "<< MRUtype <<", indexj = "<< j <<", ch = "<< ch <<", allocation_table[MRUtype].size() = "<< allocation_table[MRUtype].size() <<endl;
 				double En = MRUs[MRUtype+1]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8);
 				association_mat[i-1].push_back(min(RD,En));
 				map_26.clear(); 
 				vector<int>().swap(map_26);//釋放記憶體空間，非常重要因為map會一直增長空間最後導致無法執行
 			}
 		}
+		//cout <<"i = "<< i <<endl;
 	}
-	
+	//cout <<"index = "<< 1 <<endl;
 	HungarianOptimizer<float> optimizer;
 	std::vector<std::pair<size_t, size_t>> assignments;
+	//cout <<"association_mat[0].size() = "<< association_mat[0].size() <<", association_mat[association_mat.size()-1].size() = "<< association_mat[association_mat.size()-1].size() <<endl;
 	UpdateCosts(association_mat, optimizer.costs());
 	// entry of hungarian optimizer maximize-weighted matching
   	optimizer.Maximize(&assignments);
-  	//cout <<"index = "<< 1 <<endl;
-  	for (const auto& assignment : assignments) {
-    	std::cout << "    (" << assignment.first << ", " << assignment.second << ")" << std::endl;
-    	
-  	}
+  	
+//  	for (const auto& assignment : assignments) {
+//    	std::cout << "    (" << assignment.first << ", " << assignment.second << ")" << std::endl;
+//    	
+//  	}
 	
   	for(int i=0;i<assignments.size();i++)
   	{
   		
-  		Station *STA = &station_list[p][assignments[i].first];
+  		Station *STA = &station_list[p][non_critical[assignments[i].first]];
   		if(two_ch_mode)
 		{
-			if(ch == 0)	station_list[p][assignments[i].first].allocDRs[m][ch] =  association_mat[assignments[i].first][assignments[i].second];
-			else station_list[p][assignments[i].first].allocDRs[m][ch] =  association_mat[assignments[i].first][assignments[i].second];
-			total_DR+= station_list[p][assignments[i].first].allocDRs[m][ch];
+			if(allocation_table.size() == 11)	station_list[p][non_critical[assignments[i].first]].allocDRs[m][ch] =  association_mat[assignments[i].first][assignments[i].second];
+			else station_list[p][non_critical[assignments[i].first]].allocDRs[m][ch] =  association_mat[assignments[i].first][assignments[i].second];
+			total_DR+= station_list[p][non_critical[assignments[i].first]].allocDRs[m][ch];
 		} 
 		else
 		{
-			station_list[p][assignments[i].first].data_rate = association_mat[assignments[i].first][assignments[i].second];
-			total_DR+=station_list[p][assignments[i].first].data_rate;
+			station_list[p][non_critical[assignments[i].first]].data_rate = association_mat[assignments[i].first][assignments[i].second];
+			total_DR+=station_list[p][non_critical[assignments[i].first]].data_rate;
 			//cout << station_list[p][assignments[i].first].data_rate; 
 		}
 		//cout <<"KMindex[assignments[i].first] = "<< KMindex[assignments[i].first] <<endl;
@@ -827,8 +879,8 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 	for(int i=0;i<assignments.size();i++)
   	{
   		
-  		Station *STA = &station_list[p][assignments[i].first];
-  		double preEN = two_ch_mode?station_list[p][assignments[i].first].allocDRs[m][ch]:station_list[p][assignments[i].first].data_rate;
+  		Station *STA = &station_list[p][non_critical[assignments[i].first]];
+  		double preEN = two_ch_mode?station_list[p][non_critical[assignments[i].first]].allocDRs[m][ch]:station_list[p][non_critical[assignments[i].first]].data_rate;
   		double RD = two_ch_mode?STA->requiredDRs[m][ch]:STA->required_dr;
   		if(preEN>=RD) continue;
   		
@@ -881,7 +933,7 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 							break;
 						}
 						//cout <<"CanReAllocate = "<< CanReAllocate <<endl;
-						if (ch == 1)
+						if (allocation_table.size() == 11)
   						{
 							if(min_mcs > STA->MCS_B[v_difference[l]])	min_mcs = STA->MCS_B[v_difference[l]];
 						}	  
@@ -896,17 +948,18 @@ int AP::Tzu(vector<vector<int>>& allocation_table,int curTime, int Bandwidth, bo
 					
 					if(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8) > preEN)
 					{
-  						if(two_ch_mode)	station_list[p][assignments[i].first].allocDRs[m][ch] = min(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8),RD);
-						else	station_list[p][assignments[i].first].data_rate = min(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8),RD);
+  						if(two_ch_mode)	station_list[p][non_critical[assignments[i].first]].allocDRs[m][ch] = min(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8),RD);
+						else	station_list[p][non_critical[assignments[i].first]].data_rate = min(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8),RD);
 						renew_allocation_table(allocation_table,ch,type+1,map_26_next);	
 						index = location;
+						//cout <<"preEN = "<< preEN <<endl;
 						preEN = MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8);
 						if(preEN >=RD) CanReAllocate = 1;
 						else CanReAllocate = 0;
-						cout <<"min_mcs = "<< min_mcs <<endl;
-						cout <<"MRUtype = "<< type+1 <<endl;
-						cout <<"preEN = "<< preEN <<endl;
-						cout <<"RD = "<< RD <<endl;
+//						cout <<"min_mcs = "<< min_mcs <<endl;
+//						cout <<"MRUtype = "<< type+1 <<endl;
+//						cout <<"preEN = "<< preEN <<endl;
+//						cout <<"RD = "<< RD <<endl;
 					}
 					else if(MRUs[type+2]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8) <= preEN) CanReAllocate == -1;
 					map_26_next.clear(); 
@@ -964,17 +1017,22 @@ double AP::getEDR4STA(double EDRch, double usedRD_A, double usedRD_B, double RD,
 }
 
 
-void AP::twoChUsersAlloc()
+void AP::twoChUsersAlloc(int priority_num, bool isTzuFunc)
 {
-	//建立2*4*2的vec，用於統計當前分配Data Rate;2 mlo, 5 pri, 2 ch
-	vector<vector<vector<double>>> usedRDs(2, vector<vector<double>>(5, vector<double>(2, 0.0)));
+	//建立2*4*2的vec，用於統計當前分配Data Rate;2 mlo, priority_num pri, 2 ch
+	vector<vector<vector<double>>> usedRDs(2, vector<vector<double>>(priority_num, vector<double>(2, 0.0)));
 	for(int p = 0; p < priority_num; p++)
 	{
 		for(int i = 0; i < station_list[p].size(); i++)
 		{
 			Station* STA = &station_list[p][i];
-			if(STA->device != "SL")// MLD
-			{				
+			STA->requiredDRs[0][0] = STA->required_dr;
+			STA->requiredDRs[0][1] = STA->required_dr;
+			STA->requiredDRs[1][0] = STA->required_dr;
+			STA->requiredDRs[1][1] = STA->required_dr;
+			if(STA->device != "SL" && !isTzuFunc)// MLD
+			{	
+							
 				STA->requiredDRs[0][0] = getEDR4STA(EDR_A, usedRDs[0][p][0],usedRDs[0][p][1], STA->required_dr,usedRDs[0][p][0]);// 0 = sync, 0 = ch A 
 				STA->requiredDRs[0][1] = getEDR4STA(EDR_B, usedRDs[0][p][0],usedRDs[0][p][1], STA->required_dr,usedRDs[0][p][1]);// 0 = sync, 1 = ch B
 				usedRDs[0][p][0]+=STA->requiredDRs[0][0];
@@ -1259,37 +1317,85 @@ void AP::opt_filter()
 		}
 	}
 }
-int AP::opt_RCL(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)//two_ch指的是做雙頻道的實驗， two_ch_mode則是獲取同時兩個頻道 
+int AP::opt_RCL(vector<vector<int>>& allocation_table,int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)//two_ch指的是做雙頻道的實驗， two_ch_mode則是獲取同時兩個頻道 
 {
 	int ch = isCHA? 0:1;
+	int Remain_26 =0;
 	for(int p = 0; p < priority_num; p++)
 	{
 		for (int i = 0; i < station_list[p].size(); i++)
 		{
+			Remain_26 =0;
 			Station* STA = &station_list[p][i];
 			if(two_ch && ch == 0 && STA->device == "SL") continue; 
 			if(!isCHA && MRUs[STA->MRU_idx] > 2*996) continue;
-			int tmp = Bandwidth - MRUsToIdx[MRUs[STA->MRU_idx]];
-			if(tmp < 0) return Bandwidth;
+//			if(MRUs[STA->MRU_idx] <= 106)// small size mru  //合併FGC 
+//			{
+//				int compensate = min(5 - STA->MRU_idx,Bandwidth);
+//				Bandwidth-=compensate;
+//				if(Bandwidth == 0) return 0;
+//				STA->MRU_idx+=compensate;
+//				STA->data_rate = MRUs_dr[STA->MRU_idx];
+//			}			
+			double En =0.0;
+			double RD = two_ch_mode?STA->requiredDRs[1][ch]:STA->required_dr;
+			int Canallocate = 0;
+			if(STA->MRU_idx == 0) continue;
+			for(int j=0; j<allocation_table[(STA->MRU_idx)-1].size();j++)
+			{
+				if(allocation_table[(STA->MRU_idx)-1][j] == 0)
+				{
+					//cout <<"STA->MRU_idx = "<< STA->MRU_idx -1 <<endl;
+					int min_mcs =12;
+					vector<int> map_26;
+					MRU_map_26(map_26,allocation_table,STA->MRU_idx-1,j);
+					for(int index = 0; index < map_26.size();index++)
+  					{
+  						if (ch ==1)
+  						{
+							if(min_mcs > STA->MCS_B[index])	min_mcs = STA->MCS_B[index];
+						}	  
+  						else
+						{
+							if(min_mcs > STA->MCS_A[index]) min_mcs = STA->MCS_A[index];	
+						}
+						//cout <<"index = "<< index <<endl;	  
+  				    	//cout <<"min_mcs = "<< min_mcs <<endl;
+					}
+					//cout <<"min_mcs = "<< min_mcs <<endl;
+					En = MRUs[STA->MRU_idx]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8);				
+					renew_allocation_table(allocation_table,ch,STA->MRU_idx-1,map_26);	
+					map_26.clear(); 
+					vector<int>().swap(map_26);//釋放記憶體空間，非常重要因為map會一直增長空間最後導致無法執行
+					Canallocate = 1;
+					break;
+				} 		
+			}
+			if(Canallocate == 0) continue;
+			
 			if(two_ch_mode){
 				//STA->allocDRs[1][ch] = MRUs_dr[STA->MRU_idx];
-				if(ch == 1)	STA->allocDRs[1][ch] = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
-				else STA->allocDRs[1][ch] = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+				if(ch == 1)	STA->allocDRs[1][ch] = min(RD,En);
+				else STA->allocDRs[1][ch] = min(RD,En);
 			}
 			else{
 				//STA->data_rate = MRUs_dr[STA->MRU_idx];
-				STA->data_rate = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+				STA->data_rate = min(RD,En);
 			}
+			cout << station_list[p][i].STA_ID<<", RD= "<< RD<<", 使用26-tone 數量 = "  << MRUsToIdx[MRUs[STA->MRU_idx]] << ", 換成MRU = "<< MRUs[STA->MRU_idx] << ", 資料速率 = "<< En << endl; 
 			
-			Bandwidth = tmp;
-			if(tmp == 0) return Bandwidth;
+			for(int j=0; j<allocation_table[0].size(); j++)
+			{
+				if(allocation_table[0][j] ==0) Remain_26++;
+			}
+			if(Remain_26 == 0) return Remain_26;
 			
 		}
 	}
-	return Bandwidth;
+	return Remain_26;
 }
 
-int AP::opt_FGC(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)
+int AP::opt_FGC(vector<vector<int>>& allocation_table,int Remain_26, bool isCHA, bool two_ch_mode, bool two_ch)
 {
 	int ch = isCHA? 0:1;
 	for(int p = 0; p < priority_num; p++)
@@ -1301,22 +1407,64 @@ int AP::opt_FGC(int Bandwidth, bool isCHA, bool two_ch_mode, bool two_ch)
 			if(two_ch && ch == 0 && STA->device == "SL") continue; 
 			if(MRUs[STA->MRU_idx] <= 106)// small size mru
 			{
-				int compensate = min(5 - STA->MRU_idx,Bandwidth);
-				Bandwidth-=compensate;
-				if(Bandwidth == 0) return 0;
+				int compensate = min(5 - STA->MRU_idx,Remain_26);
+				Remain_26-=compensate;
+				if(Remain_26 == 0) return 0;
 				STA->MRU_idx+=compensate;
 				//STA->data_rate = MRUs_dr[STA->MRU_idx];
+				double En =0.0;
+				double RD = two_ch_mode?STA->requiredDRs[1][ch]:STA->required_dr;
+				int Canallocate = 0;
+				if(STA->MRU_idx == 0) continue;
+				for(int j=0; j<allocation_table[(STA->MRU_idx)-1].size();j++)
+				{
+					if(allocation_table[(STA->MRU_idx)-1][j] == 0)
+					{
+						cout <<"STA->MRU_idx = "<< STA->MRU_idx -1 <<endl;
+						int min_mcs =12;
+						vector<int> map_26;
+						MRU_map_26(map_26,allocation_table,STA->MRU_idx-1,j);
+						for(int index = 0; index < map_26.size();index++)
+  						{
+  							if (ch ==1)
+  							{
+								if(min_mcs > STA->MCS_B[index])	min_mcs = STA->MCS_B[index];
+							}	  
+  							else
+							{
+								if(min_mcs > STA->MCS_A[index]) min_mcs = STA->MCS_A[index];	
+							}
+							//cout <<"index = "<< index <<endl;	  
+  				    		//cout <<"min_mcs = "<< min_mcs <<endl;
+						}
+						cout <<"min_mcs = "<< min_mcs <<endl;
+						En = MRUs[STA->MRU_idx]*STA->MCS_R[min_mcs][0]*STA->MCS_R[min_mcs][1]/(12.8+0.8);				
+						renew_allocation_table(allocation_table,ch,STA->MRU_idx-1,map_26);	
+						map_26.clear(); 
+						vector<int>().swap(map_26);//釋放記憶體空間，非常重要因為map會一直增長空間最後導致無法執行
+						Canallocate = 1;
+						break;
+					} 		
+				}
+				if(Canallocate == 0) continue;
 				if(two_ch_mode){
 					//STA->allocDRs[1][ch] = MRUs_dr[STA->MRU_idx];
-					if(ch == 1)	STA->allocDRs[1][ch] = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
-					else STA->allocDRs[1][ch] = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_A][0]*STA->MCS_R[STA->minMCS_A][1]/(12.8+0.8);
+					if(ch == 1)	STA->allocDRs[1][ch] = min(En,RD);
+					else STA->allocDRs[1][ch] =  min(En,RD);
 				}
 				else{
 					//STA->data_rate = MRUs_dr[STA->MRU_idx];
-					STA->data_rate = MRUs[STA->MRU_idx]*STA->MCS_R[STA->minMCS_B][0]*STA->MCS_R[STA->minMCS_B][1]/(12.8+0.8);
+					STA->data_rate =  min(En,RD);
 				}
+				cout << station_list[p][i].STA_ID<<", RD= "<< RD<<", 使用26-tone 數量 = "  << MRUsToIdx[MRUs[STA->MRU_idx]] << ", 換成MRU = "<< MRUs[STA->MRU_idx] << ", 資料速率 = "<< min(En,RD) << endl; 
 			}
+			Remain_26 =0;
+			for(int j=0; j<allocation_table[0].size(); j++)
+			{
+				if(allocation_table[0][j] ==0) Remain_26++;
+			}
+			if(Remain_26 == 0) return Remain_26;
 		}
 	}
-	return Bandwidth;
+	return Remain_26;
 }
