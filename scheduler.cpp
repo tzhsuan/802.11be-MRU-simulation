@@ -1,357 +1,175 @@
-#include "scheduler.h"
-
-//用來當作排程的接口，可以根據ap選擇不同排程算法，跑sim time 
+#include "station.h"
 using namespace std;
-
-Scheduler::Scheduler(int sim_time)
+Station::Station()
 {
+	
+}
+
+bool Station::compareBySTAID(const Station& s1, const Station& s2){
+	return s1.STA_ID < s2.STA_ID;
+}
+
+bool Station::compareByRD(const Station& s1, const Station& s2){
+	return s1.required_dr < s2.required_dr;
+}
+
+Station::Station(string device, int STA_ID,int priority, int sim_time, int packet_size)
+{
+	this->device = device;
+	this->STA_ID = STA_ID;
+	this->priority = priority;
 	this->sim_time = sim_time;
-	ap = new AP(sim_time);
-}
-Scheduler::~Scheduler()
-{
-	delete ap;
-}
-
-void Scheduler::generate_traffic(vector<double> SL_STR_NSTR_RATIO,vector<int> pri_people_count, vector<int> traffic_arrival_rates, vector<int> packet_sizes, vector<int> DEADLINES)
-{
+	this->packet_size = packet_size;
+	last_packet_sizes[0] = last_packet_sizes[1] = packet_size;
 	
-	int STA_ID = 0;
-	ap->traffic_arrival_rates = traffic_arrival_rates;
-	for(int i = 0; i < pri_people_count.size(); i++) //不同priority 
+	//暫定選用rand選取MCS index，之後可能選用10%-50%頻道受干擾做實驗 
+	for(int i=0; i<144; i++)
 	{
-		double lamda = double(traffic_arrival_rates[i]) / (packet_sizes[i] * 8);
-		ap->station_list.push_back(vector<Station>(pri_people_count[i]));
-		int SL = SL_STR_NSTR_RATIO[0] * pri_people_count[i];
-		int STR = SL + SL_STR_NSTR_RATIO[1] * pri_people_count[i];
-		int NSTR = STR + SL_STR_NSTR_RATIO[2] * pri_people_count[i];
-		
-		for(int j = 0; j < pri_people_count[i]; j++) //依據不同priority比例決定裝置個數 
-		{
-			string device_type = ""; 
-			if(j < SL) device_type = "SL";
-			else if(j < STR) device_type = "STR";
-			else device_type = "NSTR";
-			Station station = Station(device_type, STA_ID,i,sim_time,packet_sizes[i]*8);
-			//Station station;
-			unsigned seed1 = std::chrono::system_clock::now().time_since_epoch().count();  //gets the current system time as an unsigned integer
-		    std::mt19937 gen(seed1); //random number generator class
-		    //每個mus 要來多少封包
-		    // 20Mb / (200 * 8) = 12500 個封包 / s. => 0.0125個封包 / mus 
-		    std::exponential_distribution<> distrib(lamda); //generate random numbers follow the exponential distribution with the lamda value=> represent waiting times between events
-		    double last_arrival = 0;
-		    double inter_arrival;
-		    int packetCount = 0;
-		    while (last_arrival < sim_time)  //計算單次sim週期會累積多少封包總數 
-		    {
-		    	//cout<< packetCount<<endl;
-		        inter_arrival = distrib(gen);  //distrib recall exponential_distribution with lambda and gen recall mt19937 gen(seed1)
-		        //cout<<"封包抵達時間 : "<< last_arrival << endl; 
-		        station.packets.push_back(Packet(packet_sizes[i]*8, last_arrival,last_arrival+DEADLINES[i]));//packet 的基本單位轉為bit 
-		        
-		        last_arrival += inter_arrival;
-		        packetCount+=1;
-		    }
-		    //cout <<"優先級:"<< i  << ", STA ID:"<< STA_ID <<", 封包總數: " << packetCount << endl;
-		    ap->station_list[i][j] = station;
-		    STA_ID+=1;
-		}
-		
+		//MCS_A[i] = rand()%12;
+		MCS_A[i] = 11;
+		if(minMCS_A > MCS_A[i]) minMCS_A = MCS_A[i];
 	}
+	for(int i=0; i<72; i++)
+	{
+		//MCS_B[i] = rand()%12;
+		MCS_B[i] = 11;
+		if(minMCS_B > MCS_B[i]) minMCS_B = MCS_B[i];
+	}
+	//minMCS_A = minMCS_B = 11;
+}
 
+void Station::updateRD(int curTime, int ch, bool isJoeFunc, bool isTzuFunc, bool two_ch_mode,int Bandwidth,double alpha)//required data rate
+{
+	// ch = 0 <- A, 1 <- B, -1 <- dont care, 可能有兩個頻道的傳輸權或是只跑A頻道實驗(不介意裝置類型) 
+	required_dr = 0.0;
+	cur_data_size = 0;
+	data_rate = 0.0;
+	int MAX_DR = -1;
 	
+	//前人設定 
+//	if(Bandwidth == 148+74) MAX_DR = 3603;
+//	else if(Bandwidth == 148) MAX_DR = 2402;
+//	else MAX_DR = 1201;
+    if(Bandwidth == 148+74)	MAX_DR = 4*966*MCS_R[minMCS_B][0]*MCS_R[minMCS_B][1]/(12.8+0.8) + 2*966*MCS_R[minMCS_A][0]*MCS_R[minMCS_A][1]/(12.8+0.8);
+	else if(Bandwidth == 148) MAX_DR = (4*966)*MCS_R[minMCS_B][0]*MCS_R[minMCS_B][1]/(12.8+0.8);
+	else MAX_DR = (2*996)*MCS_R[minMCS_A][0]*MCS_R[minMCS_A][1]/(12.8+0.8);
 
-}
-
-
-
-void Scheduler::schedule_access(int method, double alpha)
-{
-	int curTime4A = 0;
-	int c = 0;
-	//if(ch == 1)	vector<vector<int>> allocation_table(11);
-	//else vector<vector<int>> allocation_table(15);
-	vector<vector<int>> allocation_table(15);
-	for(int i = 0; i < allocation_table.size();i++)
-	{
-		//if (ch == 1) allocation_table[i] = vector<int>(remainRU_B[i],0);
-		//else allocation_table[i] = vector<int>(remainRU_A[i],0);
-		allocation_table[i] = vector<int>(remainRU_A[i],0);
+	if(device == "SL" && ch == 0){
+		return;
 	}
-	while(curTime4A < sim_time)
+	else if(device == "NSTR" && ch != -1)
 	{
-		int transTime = 0;
-		int BandwidthA = ap->Bandwidth_A_26;
-		if(method == 0)
-		{
-								
-			ap->updateSTAs(curTime4A,-1,true,false,false,BandwidthA,alpha);
-			for(int p = 0; BandwidthA > 0 && p < priority_num; p++)
-			{
-				BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,false,-1,p,-1);
-				//cout <<"優先級別 "<< 5-p<<"使用後剩餘頻寬 = " <<  BandwidthA << endl;
-			}
-			//ap->print_info();
-			//cout << "剩餘頻寬 = " <<  BandwidthA << endl;
-			transTime = ap->find_avg_length(curTime4A);
+		if(ch == 0 && curTime < last_end_trans_ChB){
+			return;
 		}
-		else if(method == 1)
-		{
-			ap->updateSTAs(curTime4A,-1,false,false,false,BandwidthA,1.0);
-			ap->sortSTAs(1);
-			BandwidthA = ap->opt_RCL(BandwidthA,true,false,false);	// 
-			BandwidthA = ap->opt_FGC(BandwidthA,true,false,false);
-			//cout << "剩餘頻寬 = " <<  BandwidthA << endl; 
-			//ap->print_info();
-			transTime = ap->find_avg_length(curTime4A);
+		else if (ch == 1 && curTime < last_end_trans_ChA){
+			return;
 		}
-		else if(method == 2) //Tzu method
-		{
-			ap->updateSTAs(curTime4A,-1,false,true,false,BandwidthA,1.0);
-			//ap->sortSTAs(2);
-			int RemainRU = remainRU_A[0];
-			for(int p = 0; RemainRU > 0 && p < priority_num; p++)
-			{
-				RemainRU = ap->Tzu(allocation_table,curTime4A,RemainRU,false,-1,p,-1);
-				cout <<"優先級別 "<< priority_num-p<<"使用後剩餘頻寬 = " <<  RemainRU << endl;
-			}
-			cout << "剩餘頻寬 = " <<  RemainRU << endl; 
-			for(int i = 0; i < 15;i++)
-			{
-				for(int j=0;j<remainRU_A[i];j++)
-				{
-					allocation_table[i][j] = 0;
-				}
-			} 
-			//ap->print_info();
-			transTime = 5000; //5ms
-			if(curTime4A + transTime > sim_time) transTime = sim_time - curTime4A; 
-		}
-//		transTime = ap->find_avg_length(curTime4A);//計算傳輸時間 
-		ap->transmit2STAs(curTime4A,transTime);//冠霖方法原本設32768 
-
-		
-
-		int duration = SIFS + transTime + SIFS + ACK;
-		curTime4A+=duration;
-		if(method == 0)
-		{
-			ap->ana_STPs.push_back(curTime4A);
-			ap->ana_TPs.push_back(duration);
-			//if(ap->ana_TPs.size() > 1) ap->ana_TPs[ap->ana_TPs.size()-1]+=ap->ana_TPs[ap->ana_TPs.size()-2];
-			ap->cal_STAs_ana(duration,sim_time);
-		}
-		
-		 //延遲傳輸的話 傳輸時間可以拉高很多 
-		cout << "當前時間 = " <<  curTime4A << endl; 
-		c+=1;
 	}
-//	allocation_table.clear();
-//	vector<vector<int>>().swap(allocation_table); 
-	ap->sortSTAs(0);
-	cout << "跑圈" << c<< endl; 
-}
-void Scheduler::schedule_access2CH(int method,double alpha)
-{
-	int curTime4A = 0;
-	int curTime4B = 0;
-	int c = 0;
-	bool flagA = curTime4A < sim_time;
-	bool flagB = curTime4B < sim_time;
-	while(flagA || flagB)
+	is_timecritical = false;
+	
+	for(int i = startIdx; i < packets.size(); i++)
 	{
-		bool alignRule1 = (curTime4A >= curTime4B) && (curTime4B + PIFS >= curTime4A);
-		bool alignRule2 = (curTime4B >= curTime4A) && (curTime4A + PIFS >= curTime4B);
-		
-		//int tmpCurTime4A0 = curTime4A, tmpCurTime4B0 = curTime4B;
-		//int tmpCurTime4A1 = curTime4A, tmpCurTime4B1 = curTime4B;
-		
-		int BandwidthA0 = ap->Bandwidth_A_26, BandwidthB0 = ap->Bandwidth_B_26;
-		int BandwidthA1 = ap->Bandwidth_A_26, BandwidthB1 = ap->Bandwidth_B_26;
-		if(alignRule1 || alignRule2)
+		//packets[i].canTrans = false;
+		if(packets[i].arrival_time <= curTime)
 		{
-			if(alignRule1) curTime4B = curTime4A;
-			else curTime4A = curTime4B; 	
-			int BandwidthA = ap->Bandwidth_A_26, BandwidthB = ap->Bandwidth_B_26;
-			int mlo0_trans_time = 0;
-			//if my func
-			if(method == 3)
+			
+			if(isJoeFunc) 
 			{
-				ap->updateSTAs(curTime4A,-1,true,false,true,BandwidthA+BandwidthB,alpha);
-				ap->twoChUsersAlloc();
-				
-				for(int p = 0; BandwidthA > 0 && p < priority_num; p++)
-				{
-					BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,true,0,p,0);
-				}
-				for(int p = 0; BandwidthB > 0 && p < priority_num; p++)
-				{
-					BandwidthB = ap->knaspack_sra(curTime4B,BandwidthB,true,0,p,1);
+				double tmp = double(packets[i].packetSize)/(min(sim_time,packets[i].deadline) - curTime);
+				if(!isinf(tmp) && tmp > 0 && tmp < MAX_DR) required_dr+=tmp;
+				else{
+					//startIdx+=1;
+					continue;
 				}
 				
-				BandwidthA = ap->Bandwidth_A_26, BandwidthB = ap->Bandwidth_B_26;
-				for(int p = 0; BandwidthA > 0 && p < priority_num; p++)
+			}
+			else if(isTzuFunc)
+			{
+				if(Bandwidth == 148+74) MAX_DR = 4*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8) + 2*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8);
+				else if(Bandwidth == 148) MAX_DR = 4*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8);
+				else MAX_DR = 2*966*MCS_R[11][0]*MCS_R[11][1]/(12.8+0.8);
+				
+				double tmp = double(packets[i].packetSize)/5000;
+				if (curTime+5000 > packets[i].deadline || curTime+5000 > sim_time)
 				{
-					BandwidthA = ap->knaspack_sra(curTime4A,BandwidthA,true,1,p,0);
+					is_timecritical = true;
+					tmp = double(packets[i].packetSize)/(min(sim_time,packets[i].deadline) - curTime);
 				}
-				for(int p = 0; BandwidthB > 0 && p < priority_num; p++)
-				{
-					BandwidthB = ap->knaspack_sra(curTime4B,BandwidthB,true,1,p,1);
+				
+				if(!isinf(tmp) && tmp > 0 && tmp < MAX_DR) required_dr+=tmp;
+				else{
+					//startIdx+=1;
+					continue;
 				}
-				mlo0_trans_time = ap->find_avg_len4MLO0(curTime4A);	
-			}
-			else if(method == 4)
-			{
-				ap->updateSTAs(curTime4A,-1,false,false,true,BandwidthA,1.0);
-				ap->sortSTAs(1);
-				BandwidthA = ap->opt_RCL(BandwidthA,true,true,true);
-				BandwidthA = ap->opt_FGC(BandwidthA,true,true,true);
-				ap->opt_filter();
-				BandwidthB = ap->opt_RCL(BandwidthB,false,true,true);
-				BandwidthB = ap->opt_FGC(BandwidthB,false,true,true);
-			}
-
-			
-			
-			//end
-			//else OPT 使用update RD後，兩個頻道各自配MRU策略 要思考 
-			int mlo1_trans_timeA = ap->find_avg_len4MLO1(true,curTime4A,-1,-1,0);
-			int mlo1_trans_timeB = ap->find_avg_len4MLO1(true,curTime4B,-1,-1,1);
-			
-			if(method == 3) ap->sim_transmit2STAs(curTime4A,mlo0_trans_time,mlo0_trans_time,0);
-			ap->sim_transmit2STAs(curTime4B,mlo1_trans_timeA,mlo1_trans_timeB,1);
-			
-			double ebr_mlo0 = method == 3?ap->evalEBR(0,mlo0_trans_time,mlo0_trans_time):-1;
-			double ebr_mlo1 = ap->evalEBR(1,mlo1_trans_timeA,mlo1_trans_timeB);
-			//cout << "EBR MLO 0 = " << ebr_mlo0 <<", EBR MLO 1 = "<<ebr_mlo1<<endl;
-			int durationA = SIFS + 0 + SIFS + ACK;
-			int durationB = durationA;
-			bool sync_mode = false;
-			if(ebr_mlo0 >= ebr_mlo1)
-			{
-				//cout << "使用 EOSYNC Model" << endl;
-				sync_mode = true;
-				durationA+=mlo0_trans_time;
-				durationB+=mlo0_trans_time;
-			}
-			else
-			{
-				//cout << "使用 EOASYNC Model"<<endl;
-				durationA+=mlo1_trans_timeA;
-				durationB+=mlo1_trans_timeB;
-			}
-			int tA =  durationA - 2 * SIFS - ACK;
-			int tB = durationB - 2 * SIFS - ACK;
-			// 指派success trans, start idx, delay
-			for(int p = 0; p < priority_num; p++)
-			{
-				for(int i = 0; i < ap->station_list[p].size(); i++)
-				{
-					Station* STA = &ap->station_list[p][i];
-					int m = sync_mode?0:1;
-					STA->startIdx = STA->startIdxs[m];
-					STA->total_dealy_time+=STA->delays[m];
-					
-					double drA = !isnan(STA->allocDRs[m][0])? STA->allocDRs[m][0]:0.0;
-					double drB = !isnan(STA->allocDRs[m][1])? STA->allocDRs[m][1]:0.0;
-					double Tdr = drA + drB;
-					
-					//cout <<STA->STA_ID<<", 優先級別 = "<< p <<", success trans number = " << STA->success_trans_nth[m] << endl;
-					if(Tdr != 0.0){
-						double tmpA = STA->success_trans_nth[m] * tA * drA / (tA * drA + tB * drB);
-						double tmpB = STA->success_trans_nth[m] * tB * drB / (tA * drA + tB * drB);
-						//cout << "在頻道 A 傳輸的封包數量 = " << tmpA << endl;
-						//cout << "在頻道 B 傳輸的封包數量 = " << tmpB << endl;
-
-						
-						STA->n_suc_packet_chA+=tmpA;
-						STA->n_suc_packet_chB+=tmpB;
-					}
-					
-					STA->success_trans+= STA->success_trans_nth[m];
-					
-					STA->last_begin_trans_ChA = curTime4A;
-					STA->last_end_trans_ChA = curTime4A + durationA;
-					STA->last_begin_trans_ChB = curTime4B;
-					STA->last_end_trans_ChB = curTime4B + durationB;
-					
-
-				}	
+				
 			}	
-			curTime4A+=durationA, curTime4B+=durationB;
+			else required_dr+= double(packets[i].packetSize);			
+			cur_data_size+=packets[i].packetSize;
+											
+			//這裡也許要去掉極端值 
 		}
-		else
-		{
-			int Time = 0, Time2 = 0,Bandwidth = 0, ch = -1;
-			if(curTime4A < curTime4B)
-			{
-				Time = curTime4A;
-				Time2 = curTime4B;
-				Bandwidth = ap->Bandwidth_A_26;
-				ch = 0;
-			}
-			else
-			{
-				Time = curTime4B;
-				Time2 = curTime4A;
-				Bandwidth = ap->Bandwidth_B_26;
-				ch = 1;
-			}
-			int transTime = 0;
-			if(method == 3){
-				ap->updateSTAs(Time,ch,true,false,false,Bandwidth,alpha);		
-				for(int p = 0; Bandwidth > 0 && p < priority_num; p++)
-				{
-					Bandwidth = ap->knaspack_sra(Time,Bandwidth,false,-1,p,-1);
-				}
-				
-				transTime = ap->find_avg_len4MLO1(false,Time, Time2 - SIFS*2 - ACK , 5000,-1);
-			}
-			else if(method == 4){
-				ap->updateSTAs(curTime4A,-1,false,false,false,Bandwidth,1.0);
-				ap->sortSTAs(1);
-				Bandwidth = ap->opt_RCL(Bandwidth,ch == 0,false,true);	//決定分配大小 
-				Bandwidth = ap->opt_FGC(Bandwidth,ch == 0,false,true);	//決定分配速率 
-				transTime = ap->find_avg_length(Time);
-			}
-			//int transTime = ap->find_avg_len4MLO1(false,Time, Time2 - SIFS*2 - ACK , 5000,-1);
-			ap->transmit2STAs(Time,transTime);
-			int duration = SIFS + transTime + SIFS + ACK;
-			
-			for(int p = 0; p < priority_num; p++)
-			{
-				for(int i = 0; i < ap->station_list[p].size(); i++)
-				{
-					Station* STA = &ap->station_list[p][i];
-					if(curTime4A < curTime4B){
-						STA->n_suc_packet_chA+=STA->cur_suc_packet;
-						STA->last_begin_trans_ChA = curTime4A;
-						STA->last_end_trans_ChA = curTime4A + duration;
-						
-					} 
-					else{
-						STA->n_suc_packet_chB+=STA->cur_suc_packet;
-						STA->last_begin_trans_ChB = curTime4B;
-						STA->last_end_trans_ChB = curTime4B + duration;
-						
-					} 
-				}
-			}
-			if(curTime4A < curTime4B){
-				curTime4A+=duration;
-			}
-			else{
-				curTime4B+=duration;
-			}
-			
-			
-		}
-		 //延遲傳輸的話 傳輸時間可以拉高很多 
-		//cout << "當前時間 在頻道A = " <<  curTime4A<<", 在頻道B = "<< curTime4B << endl; 
-		c+=1;
-		flagA = curTime4A < sim_time;
-		flagB = curTime4B < sim_time;
+		else break;
 	}
-	ap->sortSTAs(0);
-	cout << "跑圈" << c<< endl; 
+	if(!isJoeFunc && !isTzuFunc){
+		required_dr/= double(sim_time)-curTime;
+	}
+	if(two_ch_mode)
+	{
+		//assign startIdx to vectors
+		cur_data_sizes[0] = cur_data_sizes[1] = cur_data_size;
+		startIdxs[0] = startIdxs[1] = startIdx;
+	}
+	if(!isTzuFunc) required_dr*=alpha;//alpha 
+	
+	//cout << STA_ID<<" 所需資料速率更新完畢 = "  << required_dr << endl; 
 }
+
+void Station::updateExpired(int curTime)
+{
+	cur_expired_size = 0;
+	last_expired2_size = last_expired_size;
+	last_expired_size = cur_expired_size;
+	while(packets.size() > startIdx)
+	{
+		if(curTime > packets[startIdx].deadline) {
+			//在這裡計算過期封包 
+			n_expired_packet+=1;
+			cur_expired_size+=packets[startIdx].packetSize;
+			startIdx+=1;
+		}		
+		else break;		
+	}
+	
+	//cout << STA_ID << " 過期封包更新完畢" << endl; 
+}
+
+void Station::ENDupdateExpired(int curTime)
+{
+	cur_expired_size = 0;
+	last_expired2_size = last_expired_size;
+	last_expired_size = cur_expired_size;
+	while(packets.size() > startIdx)
+	{
+		//在這裡計算過期封包 
+		n_expired_packet+=1;
+		cur_expired_size+=packets[startIdx].packetSize;
+		startIdx+=1;	
+	}
+	//cout << STA_ID << " 過期封包更新完畢" << endl; 
+}
+void Station::updateRMRU(int curTime, int sim_time, double MaxDR, int Bandwidth)
+{
+	double trans_rate = (required_dr * sim_time - cur_sum_DR) / (sim_time - curTime);
+	double In = required_dr / MaxDR * Bandwidth;
+	MRU_idx = 0;
+	for(int i = 0; i < upperBoundMRU.size(); i++)
+	{
+		if(In < upperBoundMRU[i]){
+			MRU_idx = i;
+			break;
+		}
+	}
+}
+
+
