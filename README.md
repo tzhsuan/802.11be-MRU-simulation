@@ -1,6 +1,6 @@
 # Wireless Network Simulation for OFDMA and Multi-Channel Scheduling
 
-This repository contains a C++ implementation of a wireless network simulation for Orthogonal Frequency Division Multiple Access (OFDMA) and multi-channel scheduling, based on IEEE 802.11 Wi-Fi standards. The simulation models an Access Point (AP) managing multiple Stations (STAs) with varying traffic priorities, packet deadlines, and channel conditions, supporting single-link and multi-link operations (MLO). It includes advanced resource allocation using the Hungarian algorithm for optimal STA-MRU assignments.
+This repository contains a C++ implementation of a wireless network simulation for Orthogonal Frequency Division Multiple Access (OFDMA) and multi-channel scheduling, based on IEEE 802.11be Wi-Fi standards. The simulation models an Access Point (AP) managing multiple Stations (STAs) with varying traffic priorities, packet deadlines, and channel conditions, supporting single-link and multi-link operations (MLO). It includes advanced resource allocation using the Hungarian algorithm for optimal STA-MRU assignments.
 
 ## Overview
 
